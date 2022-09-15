@@ -36,13 +36,14 @@ import random
 class Main():
     def __init__(self, train_config, env_config, debug=False):
 
-        self.train_config = train_config
-        self.env_config = env_config
+        self.train_config = train_config        # batch:32, epoch:3, slide_win:5, dim:64, slide_stride:1, comment:msl, seed:5
+                                                # out_layer_num:1, out_layer_inter_dim:128, decay: 0.0, val_ratio:0.2, topk:5
+        self.env_config = env_config            # save_path:msl, dataset:msl, report:best, device:cpu, load_model_path: ''
         self.datestr = None
 
-        dataset = self.env_config['dataset'] 
-        train_orig = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
-        test_orig = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)
+        dataset = self.env_config['dataset']                                              # msl
+        train_orig = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)     # (1565,27)
+        test_orig = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)       # (2049,28) columnに'attack'がある
        
         train, test = train_orig, test_orig
 
