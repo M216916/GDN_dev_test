@@ -70,21 +70,16 @@ class Main():
             'slide_stride': train_config['slide_stride'],                                     # slide_stride : 1
         }
 
-        train_dataset = TimeDataset(train_dataset_indata, fc_edge_index, mode='train', config=cfg)
-             #    [0][0]     [0][1]    [0][2]    [0][3]
-             #    (27,5)      (27)       ()      (2,702)
-             #       …         …         …         …
-             #       …         …         …         …
-             # [1559][0]  [1559][1]  [1559][2]  [1559][3]
-             #    (27,5)      (27)       ()      (2,702)
-            
+        train_dataset = TimeDataset(train_dataset_indata, fc_edge_index, mode='train', config=cfg)    
         test_dataset = TimeDataset(test_dataset_indata, fc_edge_index, mode='test', config=cfg)
-             #    [0][0]     [0][1]    [0][2]    [0][3]
-             #    (27,5)      (27)       ()      (2,702)
-             #       …         …         …         …
-             #       …         …         …         …
-             # [2043][0]  [2043][1]  [2043][2]  [2043][3]
-             #    (27,5)      (27)       ()      (2,702)
+        
+             #【train】                                          #【test】
+             #    [0][0]     [0][1]    [0][2]    [0][3]          #    [0][0]     [0][1]    [0][2]    [0][3]
+             #    (27,5)      (27)       ()      (2,702)         #    (27,5)      (27)       ()      (2,702)
+             #       …         …         …         …             #       …         …         …         …
+             #       …         …         …         …             #       …         …         …         …
+             # [1559][0]  [1559][1]  [1559][2]  [1559][3]        # [2043][0]  [2043][1]  [2043][2]  [2043][3]
+             #    (27,5)      (27)       ()      (2,702)         #    (27,5)      (27)       ()      (2,702)
 
         train_dataloader, val_dataloader = self.get_loaders(train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
 
@@ -97,24 +92,46 @@ class Main():
         self.test_dataloader = DataLoader(test_dataset, batch_size=train_config['batch'],
                             shuffle=False, num_workers=0)
 
+                                        # import pprint
+                                        # pprint.pprint(vars(self.test_dataloader))
+        
+                                        # 【self.train_dataloader】【self.val_dataloader】【self.test_dataloader】
+                                        # _DataLoader__initialized             : True
+                                        # _DataLoader__multiprocessing_context : None
+                                        # _IterableDataset_len_called          : None
+                                        # _dataset_kind                        : 0
+                                        # batch_sampler                        : <torch.utils.data.sampler.BatchSampler object at ~>
+                                        # batch_size                           : 32
+                                        # collate_fn                           : <function default_collate at ~>
+                                        # dataset                              : <torch.utils.data.dataset.Subset object at ~>
+                                        # drop_last                            : False
+                                        # num_workers                          : 0
+                                        # pin_memory                           : False
+                                        # sampler                              : <torch.utils.data.sampler.RandomSampler object at ~>
+                                        # timeout                              : 0
+                                        # worker_init_fn                       : None
+
+        
+        
 
         edge_index_sets = []
-        edge_index_sets.append(fc_edge_index)
+        edge_index_sets.append(fc_edge_index)                               # edge_index_sets[0][0]:702 ／ [0][1]:702
 
-        self.model = GDN(edge_index_sets, len(feature_map), 
-                dim=train_config['dim'], 
-                input_dim=train_config['slide_win'],
-                out_layer_num=train_config['out_layer_num'],
-                out_layer_inter_dim=train_config['out_layer_inter_dim'],
-                topk=train_config['topk']
-            ).to(self.device)
+        self.model = GDN(edge_index_sets, len(feature_map),                 # len(feature_map) = 27
+                dim=train_config['dim'],                                    # 64
+                input_dim=train_config['slide_win'],                        # 5
+                out_layer_num=train_config['out_layer_num'],                # 1
+                out_layer_inter_dim=train_config['out_layer_inter_dim'],    # 128
+                topk=train_config['topk']                                   # 5
+            ).to(self.device)                                               # cpu
 
 
 
     def run(self):
 
-        if len(self.env_config['load_model_path']) > 0:
-            model_save_path = self.env_config['load_model_path']
+        if len(self.env_config['load_model_path']) > 0:                     # × (len(self.env_config['load_model_path'] = 0)
+            model_save_path = self.env_config['load_model_path']            # ×
+
         else:
             model_save_path = self.get_save_path()[0]
 
