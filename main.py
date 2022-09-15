@@ -42,37 +42,49 @@ class Main():
         self.datestr = None
 
         dataset = self.env_config['dataset']                                              # msl
-        train_orig = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)     # (1565,27)
-        test_orig = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)       # (2049,28) columnに'attack'がある
+        train_orig = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)     # train : (1565,27)
+        test_orig = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)       # test  : (2049,28) columnに'attack'がある
        
         train, test = train_orig, test_orig
 
         if 'attack' in train.columns:
             train = train.drop(columns=['attack'])
 
-        feature_map = get_feature_map(dataset)
-        fc_struc = get_fc_graph_struc(dataset)
+        feature_map = get_feature_map(dataset)                                            # M-6, M-1, M-2, S-2 … : len 27
+        fc_struc = get_fc_graph_struc(dataset)                                            # M-6:[M-1, M-2, S-2 …], M-1:[M-6, M-2, S-2 …],  … : len 27
 
         set_device(env_config['device'])
-        self.device = get_device()
+        self.device = get_device()                                                        # cpu
 
         fc_edge_index = build_loc_net(fc_struc, list(train.columns), feature_map=feature_map)
-        fc_edge_index = torch.tensor(fc_edge_index, dtype = torch.long)
+        fc_edge_index = torch.tensor(fc_edge_index, dtype = torch.long)                       # (2,702) : len 2   torch.int64に変換
 
         self.feature_map = feature_map
 
-        train_dataset_indata = construct_data(train, feature_map, labels=0)
-        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())
+        train_dataset_indata = construct_data(train, feature_map, labels=0)                   # (28, 1565)
+        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())  # (28, 2049)
 
 
         cfg = {
-            'slide_win': train_config['slide_win'],
-            'slide_stride': train_config['slide_stride'],
+            'slide_win': train_config['slide_win'],                                           # slide_win    : 5
+            'slide_stride': train_config['slide_stride'],                                     # slide_stride : 1
         }
 
         train_dataset = TimeDataset(train_dataset_indata, fc_edge_index, mode='train', config=cfg)
+             #    [0][0]     [0][1]    [0][2]    [0][3]
+             #    (27,5)      (27)       ()      (2,702)
+             #       …         …         …         …
+             #       …         …         …         …
+             # [1559][0]  [1559][1]  [1559][2]  [1559][3]
+             #    (27,5)      (27)       ()      (2,702)
+            
         test_dataset = TimeDataset(test_dataset_indata, fc_edge_index, mode='test', config=cfg)
-
+             #    [0][0]     [0][1]    [0][2]    [0][3]
+             #    (27,5)      (27)       ()      (2,702)
+             #       …         …         …         …
+             #       …         …         …         …
+             # [2043][0]  [2043][1]  [2043][2]  [2043][3]
+             #    (27,5)      (27)       ()      (2,702)
 
         train_dataloader, val_dataloader = self.get_loaders(train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
 
