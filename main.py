@@ -176,19 +176,21 @@ class Main():
                                 shuffle=False)
 
         return train_dataloader, val_dataloader
+    
 
     def get_score(self, test_result, val_result):
 
-        feature_num = len(test_result[0][0])
-        np_test_result = np.array(test_result)
-        np_val_result = np.array(val_result)
+        feature_num = len(test_result[0][0])                                                       # 27
+        np_test_result = np.array(test_result)                                                     # (3, 2044, 27)
+        np_val_result = np.array(val_result)                                                       # (3,  312, 27)
 
-        test_labels = np_test_result[2, :, 0].tolist()
+        test_labels = np_test_result[2, :, 0].tolist()                                             # len : 2044  0/1 のみで構成
     
-        test_scores, normal_scores = get_full_err_scores(test_result, val_result)
+        test_scores, normal_scores = get_full_err_scores(test_result, val_result)                  # test_scores   : (27, 2044)
+                                                                                                   # normal_scores : (27,  312)
 
-        top1_best_info = get_best_performance_data(test_scores, test_labels, topk=1) 
-        top1_val_info = get_val_performance_data(test_scores, normal_scores, test_labels, topk=1)
+        top1_best_info = get_best_performance_data(test_scores, test_labels, topk=1)               # len : 5
+        top1_val_info = get_val_performance_data(test_scores, normal_scores, test_labels, topk=1)  # len : 5
 
 
         print('=========================** Result **============================\n')
