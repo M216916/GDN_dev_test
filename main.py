@@ -156,15 +156,17 @@ class Main():
         self.get_score(self.test_result, self.val_result)                   # None
 
     def get_loaders(self, train_dataset, seed, batch, val_ratio=0.1):
-        dataset_len = int(len(train_dataset))
-        train_use_len = int(dataset_len * (1 - val_ratio))
-        val_use_len = int(dataset_len * val_ratio)
-        val_start_index = random.randrange(train_use_len)
-        indices = torch.arange(dataset_len)
+        dataset_len = int(len(train_dataset))                               # 1560
+        train_use_len = int(dataset_len * (1 - val_ratio))                  # 1248
+        val_use_len = int(dataset_len * val_ratio)                          # 312
+        val_start_index = random.randrange(train_use_len)                   # 523
+        indices = torch.arange(dataset_len)                                 # tensor[   0,    1,    2,  ..., 1557, 1558, 1559]
 
         train_sub_indices = torch.cat([indices[:val_start_index], indices[val_start_index+val_use_len:]])
-        train_subset = Subset(train_dataset, train_sub_indices)
-
+                                                                            # indices[:val_start_index] : tensor[   0,    1,    2,  ...,  520,  521,  522]
+                                                                            # indices[ + val_use_len:]  : tensor[ 835,  836,  837,  ..., 1557, 1558, 1559]
+        train_subset = Subset(train_dataset, train_sub_indices)             # train_sub_indices         : len 1248
+                                                                            # torch.utils.data.dataset.Subset object
         val_sub_indices = indices[val_start_index:val_start_index+val_use_len]
         val_subset = Subset(train_dataset, val_sub_indices)
 
