@@ -133,27 +133,27 @@ class Main():
             model_save_path = self.env_config['load_model_path']            # ×
 
         else:
-            model_save_path = self.get_save_path()[0]
+            model_save_path = self.get_save_path()[0]                       # ./pretrained/msl/best_09|21-17:31:58.pt
 
             self.train_log = train(self.model, model_save_path, 
-                config = train_config,
-                train_dataloader=self.train_dataloader,
-                val_dataloader=self.val_dataloader, 
-                feature_map=self.feature_map,
-                test_dataloader=self.test_dataloader,
-                test_dataset=self.test_dataset,
-                train_dataset=self.train_dataset,
-                dataset_name=self.env_config['dataset']
+                config = train_config,                                      # batch:32, epoch:3, slide_win:5, dim:64, slide_stride:1, comment:msl, ...
+                train_dataloader=self.train_dataloader,                     # torch.utils.data.dataloader.DataLoader object
+                val_dataloader=self.val_dataloader,                         # torch.utils.data.dataloader.DataLoader object
+                feature_map=self.feature_map,                               # M-6, M-1, M-2, S-2 … : len 27
+                test_dataloader=self.test_dataloader,                       # torch.utils.data.dataloader.DataLoader object
+                test_dataset=self.test_dataset,                             # datasets.TimeDataset.TimeDataset object
+                train_dataset=self.train_dataset,                           # datasets.TimeDataset.TimeDataset object
+                dataset_name=self.env_config['dataset']                     # msl
             )
         
         # test            
         self.model.load_state_dict(torch.load(model_save_path))
         best_model = self.model.to(self.device)
 
-        _, self.test_result = test(best_model, self.test_dataloader)
-        _, self.val_result = test(best_model, self.val_dataloader)
+        _, self.test_result = test(best_model, self.test_dataloader)        # _:スカラー ／ self.test_result:(3,2044,27)
+        _, self.val_result = test(best_model, self.val_dataloader)          # _:スカラー ／ self.test_result:(3, 312,27)
 
-        self.get_score(self.test_result, self.val_result)
+        self.get_score(self.test_result, self.val_result)                   # None
 
     def get_loaders(self, train_dataset, seed, batch, val_ratio=0.1):
         dataset_len = int(len(train_dataset))
