@@ -200,8 +200,8 @@ class Main():
         info = None
         if self.env_config['report'] == 'best':
             info = top1_best_info
-        elif self.env_config['report'] == 'val':
-            info = top1_val_info
+        elif self.env_config['report'] == 'val':   # ×
+            info = top1_val_info                   # ×
 
         print(f'F1 score: {info[0]}')
         print(f'precision: {info[1]}')
