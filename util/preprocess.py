@@ -67,16 +67,16 @@ def build_net(target, all_features):
 def construct_data(data, feature_map, labels=0):
     res = []
 
-    for feature in feature_map:
+    for feature in feature_map:                                 # feature : M-6, M-1, M-2, S-2, P-10, ...
         if feature in data.columns:
-            res.append(data.loc[:, feature].values.tolist())
-        else:
-            print(feature, 'not exist in data')
+            res.append(data.loc[:, feature].values.tolist())    # train : 1565 × 27 list ／ test : 2049 × 27 list
+        else:                                                   # ×
+            print(feature, 'not exist in data')                 # ×
     # append labels as last
-    sample_n = len(res[0])
+    sample_n = len(res[0])                                      # train : 1565 ／ test : 2049
 
-    if type(labels) == int:
-        res.append([labels]*sample_n)
+    if type(labels) == int:                                     # train : labels = 0
+        res.append([labels]*sample_n)                           #         len(res) = 1565
     elif len(labels) == sample_n:
         res.append(labels)
 
