@@ -210,16 +210,16 @@ class Main():
 
     def get_save_path(self, feature_name=''):
 
-        dir_path = self.env_config['save_path']
+        dir_path = self.env_config['save_path']                  # msl
         
         if self.datestr is None:
-            now = datetime.now()
-            self.datestr = now.strftime('%m|%d-%H:%M:%S')
+            now = datetime.now()                                 # 現在の時刻 YYYY-MM-DD HH:MM:SS
+            self.datestr = now.strftime('%m|%d-%H:%M:%S')        # 現在の時刻      MM|DD-HH:MM:SS
         datestr = self.datestr          
 
-        paths = [
-            f'./pretrained/{dir_path}/best_{datestr}.pt',
-            f'./results/{dir_path}/{datestr}.csv',
+        paths = [                                        
+            f'./pretrained/{dir_path}/best_{datestr}.pt',        # path作成  ./pretrained/msl/best_09|22-16:30:34.pt
+            f'./results/{dir_path}/{datestr}.csv',               # path作成  ./results   /msl/     09|22-16:30:34.csv
         ]
 
         for path in paths:
