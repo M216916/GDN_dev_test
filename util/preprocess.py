@@ -75,10 +75,10 @@ def construct_data(data, feature_map, labels=0):
     # append labels as last
     sample_n = len(res[0])                                      # train : 1565 ／ test : 2049
 
-    if type(labels) == int:                                     # train : labels = 0
-        res.append([labels]*sample_n)                           #         len(res) = 1565
-    elif len(labels) == sample_n:
-        res.append(labels)
+    if type(labels) == int:                                     # train のとき
+        res.append([labels]*sample_n)                           # res に(0, 0, ..., 0) を追加 → 1565 × 28 list
+    elif len(labels) == sample_n:                               # test のとき
+        res.append(labels)                                      # res に(0, 1 の混合 )を追加 → 2049 × 28 list
 
     return res
 
