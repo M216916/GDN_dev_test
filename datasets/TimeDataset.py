@@ -8,15 +8,14 @@ import numpy as np
 
 class TimeDataset(Dataset):
     def __init__(self, raw_data, edge_index, mode='train', config = None):
-        self.raw_data = raw_data
+        
+        self.raw_data = raw_data             # train : 28 list × 1565 ／ test : 28 list × 2049
+        self.config = config                 # { slide_win : 5, slide_stride : 1}
+        self.edge_index = edge_index         # tensor[[ 1,  2,  3,  ..., 23, 24, 25], [ 0,  0,  0,  ..., 26, 26, 26]] ... (2, 702)
+        self.mode = mode                     # train ／ test
 
-        self.config = config
-        self.edge_index = edge_index
-        self.mode = mode
-
-        x_data = raw_data[:-1]
-        labels = raw_data[-1]
-
+        x_data = raw_data[:-1]               # train : 27 list × 1565 ／ test : 27 list × 2049
+        labels = raw_data[-1]                # train : 1565 (0 or 1)  ／ test : 2049  (0.0 or 1.0)
 
         data = x_data
 
