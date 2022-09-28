@@ -56,7 +56,7 @@ class TimeDataset(Dataset):
         x = torch.stack(x_arr).contiguous()                # x[1559][26] : torch.Size[27, 5] ／ x[2043][26] : torch.Size[27, 5]
         y = torch.stack(y_arr).contiguous()                # y[1559][26] : torch.Size[27]    ／ y[2043][26] : torch.Size[27]
 
-        labels = torch.Tensor(labels_arr).contiguous()     # y[1559]     : torch.Size[]    ／ y[2043]       : torch.Size[]
+        labels = torch.Tensor(labels_arr).contiguous()     # labels[1559]: torch.Size[]      ／ labels[2043]: torch.Size[]
         
         return x, y, labels
 
