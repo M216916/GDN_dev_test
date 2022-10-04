@@ -160,16 +160,16 @@ class GDN(nn.Module):
             
             gcn_outs.append(gcn_out)
 
-        x = torch.cat(gcn_outs, dim=1)                      # torch.Size[32, 27, 64]
-        x = x.view(batch_num, node_num, -1)                 # torch.Size[864, 64]
+        x = torch.cat(gcn_outs, dim=1)                      # torch.Size[864, 64]
+        x = x.view(batch_num, node_num, -1)                 # torch.Size[32, 27, 64]
 
 
-        indexes = torch.arange(0,node_num).to(device)       # tensor[ 0,  1,  2,  3, ... , 24, 25, 26]
+        indexes = torch.arange(0,node_num).to(device)       # tensor[ 0,  1,  2,  3, ... , 24, 25, 26] : torch.Size[27] →embedding→ [27, 64]
         
-        out = torch.mul(x, self.embedding(indexes))         # torch.Size[32, 27, 64]
-        out = out.permute(0,2,1)                            # torch.Size[32, 64, 27]
+        out = torch.mul(x, self.embedding(indexes))         # torch.Size[32, 27, 64]     # out[i,j,k] = x[i,j,k] * emb[j,k]
+        out = out.permute(0,2,1)                            # torch.Size[32, 64, 27]     # 要素入れ替え
         out = F.relu(self.bn_outlayer_in(out))              # torch.Size[32, 64, 27]
-        out = out.permute(0,2,1)                            # torch.Size[32, 27, 64]
+        out = out.permute(0,2,1)                            # torch.Size[32, 27, 64]     # 要素入れ替え
         out = self.dp(out)                                  # torch.Size[32, 27, 64]
         out = self.out_layer(out)                           # torch.Size[32, 27,  1]
         out = out.view(-1, node_num)                        # torch.Size[32, 27]
