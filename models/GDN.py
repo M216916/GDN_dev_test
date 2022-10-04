@@ -86,30 +86,24 @@ class GDN(nn.Module):
 
         self.edge_index_sets = edge_index_sets
 
-        device = get_device()
-
-        edge_index = edge_index_sets[0]
-
-
-        embed_dim = dim
-        self.embedding = nn.Embedding(node_num, embed_dim)
+        device = get_device()                                 # cpu
+        edge_index = edge_index_sets[0]                       # tensor[[ 1, 2, 3,..., 23, 24, 25], [0, 0, 0,..., 26, 26, 26]] : (2,702)
+        embed_dim = dim                                       # 64
+        self.embedding = nn.Embedding(node_num, embed_dim)    # node_num : 27 ／ embed_dim : 64
         self.bn_outlayer_in = nn.BatchNorm1d(embed_dim)
 
-
-        edge_set_num = len(edge_index_sets)
+        edge_set_num = len(edge_index_sets)                   # edge_set_num : 1
         self.gnn_layers = nn.ModuleList([
             GNNLayer(input_dim, dim, inter_dim=dim+embed_dim, heads=1) for i in range(edge_set_num)
         ])
 
-
         self.node_embedding = None
-        self.topk = topk
+        self.topk = topk                                      # 20
         self.learned_graph = None
 
         self.out_layer = OutLayer(dim*edge_set_num, node_num, out_layer_num, inter_num = out_layer_inter_dim)
-
-        self.cache_edge_index_sets = [None] * edge_set_num
-        self.cache_embed_index = None
+        self.cache_edge_index_sets = [None] * edge_set_num    # [None]
+        self.cache_embed_index = None                         # None
 
         self.dp = nn.Dropout(0.2)
 
@@ -121,29 +115,27 @@ class GDN(nn.Module):
 
     def forward(self, data, org_edge_index):
 
-        x = data.clone().detach()
-        edge_index_sets = self.edge_index_sets
+        x = data.clone().detach()                              # torch.Size[32, 27, 5]     たまに[24, 27, 5]もあり
+        edge_index_sets = self.edge_index_sets                 # tensor[[ 1, 2, 3,..., 23, 24, 25], [0, 0, 0,..., 26, 26, 26]] : (2,702)
+        device = data.device                                   # cpu
 
-        device = data.device
-
-        batch_num, node_num, all_feature = x.shape
-        x = x.view(-1, all_feature).contiguous()
+        batch_num, node_num, all_feature = x.shape             # batch_num : 32 or 24 ／ node_num : 27 ／ all_feature : 5
+        x = x.view(-1, all_feature).contiguous()               # torch.Size[864, 5] or [648, 5]
 
 
         gcn_outs = []
         for i, edge_index in enumerate(edge_index_sets):
-            edge_num = edge_index.shape[1]
-            cache_edge_index = self.cache_edge_index_sets[i]
+            edge_num = edge_index.shape[1]                     # 702
+            cache_edge_index = self.cache_edge_index_sets[i]   # tensor[[1, 2, 3, ..., 860, 861, 862], [0, 0, 0, ..., 863, 863, 863]]
 
             if cache_edge_index is None or cache_edge_index.shape[1] != edge_num*batch_num:
                 self.cache_edge_index_sets[i] = get_batch_edge_index(edge_index, batch_num, node_num).to(device)
             
-            batch_edge_index = self.cache_edge_index_sets[i]
+            batch_edge_index = self.cache_edge_index_sets[i]   # tensor[[1, 2, 3, ..., 860, 861, 862], [0, 0, 0, ..., 863, 863, 863]]
             
-            all_embeddings = self.embedding(torch.arange(node_num).to(device))
-
-            weights_arr = all_embeddings.detach().clone()
-            all_embeddings = all_embeddings.repeat(batch_num, 1)
+            all_embeddings = self.embedding(torch.arange(node_num).to(device))    # torch.Size[ 27, 64]
+            weights_arr = all_embeddings.detach().clone()                         # torch.Size[ 27, 64]
+            all_embeddings = all_embeddings.repeat(batch_num, 1)                  # torch.Size[864, 64] (repeat*32 のとき)
 
             weights = weights_arr.view(node_num, -1)
 
