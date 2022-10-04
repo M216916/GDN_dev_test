@@ -116,7 +116,7 @@ class Main():
 
         edge_index_sets = []
         edge_index_sets.append(fc_edge_index)                               # edge_index_sets[0][0] : 1,2,3,...,25,26,0,2,3,...,25,26,..., 0, 1, 2,...,24,25 (702)
-                                                                                             [0][1] : 0,0,0,..., 0, 0,1,1,1,..., 1, 1,...,26,26,26,...,26,26 (702)
+                                                                            #                [0][1] : 0,0,0,..., 0, 0,1,1,1,..., 1, 1,...,26,26,26,...,26,26 (702)
 
         self.model = GDN(edge_index_sets, len(feature_map),                 # len(feature_map) = 27
                 dim=train_config['dim'],                                    # 64
