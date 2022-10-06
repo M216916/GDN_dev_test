@@ -168,9 +168,9 @@ class GDN(nn.Module):
         
         out = torch.mul(x, self.embedding(indexes))         # torch.Size[32, 27, 64]     # out[i,j,k] = x[i,j,k] * emb[j,k]
         out = out.permute(0,2,1)                            # torch.Size[32, 64, 27]     # 要素入れ替え
-        out = F.relu(self.bn_outlayer_in(out))              # torch.Size[32, 64, 27]
+        out = F.relu(self.bn_outlayer_in(out))              # torch.Size[32, 64, 27]     # Batch Normalization
         out = out.permute(0,2,1)                            # torch.Size[32, 27, 64]     # 要素入れ替え
-        out = self.dp(out)                                  # torch.Size[32, 27, 64]
+        out = self.dp(out)                                  # torch.Size[32, 27, 64]     #
         out = self.out_layer(out)                           # torch.Size[32, 27,  1]
         out = out.view(-1, node_num)                        # torch.Size[32, 27]
    
