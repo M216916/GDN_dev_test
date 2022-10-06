@@ -119,34 +119,33 @@ def get_val_performance_data(total_err_scores, normal_scores, gt_labels, topk=1)
     return f1, pre, rec, auc_score, thresold
 
 
-def get_best_performance_data(total_err_scores, gt_labels, topk=1):
+def get_best_performance_data(total_err_scores, gt_labels, topk=1):       # total_err_scores : (27, 2044) ／ gt_labels : len(2044) (0.0 or 1.0)
 
-    total_features = total_err_scores.shape[0]
+    total_features = total_err_scores.shape[0]                            # 27
 
     # topk_indices = np.argpartition(total_err_scores, range(total_features-1-topk, total_features-1), axis=0)[-topk-1:-1]
     topk_indices = np.argpartition(total_err_scores, range(total_features-topk-1, total_features), axis=0)[-topk:]
-
+                                                                          # (1, 2044)
     total_topk_err_scores = []
     topk_err_score_map=[]
 
     total_topk_err_scores = np.sum(np.take_along_axis(total_err_scores, topk_indices, axis=0), axis=0)
-
+                                                                          # (2044,)
     final_topk_fmeas ,thresolds = eval_scores(total_topk_err_scores, gt_labels, 400, return_thresold=True)
+                                                                          # final_topk_fmeas : len(400) ／ thresolds : len(400)
+    th_i = final_topk_fmeas.index(max(final_topk_fmeas))                  # th_i : final_topk_fmeas の最大値のindex
+    thresold = thresolds[th_i]                                            # thresoldsの index 番目
 
-    th_i = final_topk_fmeas.index(max(final_topk_fmeas))
-    thresold = thresolds[th_i]
+    pred_labels = np.zeros(len(total_topk_err_scores))                    # (0, 0, 0, ... ,0) : len(2044)
+    pred_labels[total_topk_err_scores > thresold] = 1                     # 条件を満たす部分を 1 に
 
-    pred_labels = np.zeros(len(total_topk_err_scores))
-    pred_labels[total_topk_err_scores > thresold] = 1
-
-    for i in range(len(pred_labels)):
+    for i in range(len(pred_labels)):                                     # pred_labels ／ gt_labels を整数に
         pred_labels[i] = int(pred_labels[i])
         gt_labels[i] = int(gt_labels[i])
 
-    pre = precision_score(gt_labels, pred_labels)
-    rec = recall_score(gt_labels, pred_labels)
-
-    auc_score = roc_auc_score(gt_labels, total_topk_err_scores)
+    pre = precision_score(gt_labels, pred_labels)                         # precision(適合率)
+    rec = recall_score(gt_labels, pred_labels)                            # recall(再現率)
+    auc_score = roc_auc_score(gt_labels, total_topk_err_scores)           # auc
 
     return max(final_topk_fmeas), pre, rec, auc_score, thresold
 
