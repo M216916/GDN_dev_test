@@ -4,34 +4,27 @@ from sklearn.metrics import precision_score, recall_score, roc_auc_score, f1_sco
 
 
 def get_full_err_scores(test_result, val_result):
-    np_test_result = np.array(test_result)
-    np_val_result = np.array(val_result)
+    np_test_result = np.array(test_result)                         # (3, 2044, 27)
+    np_val_result = np.array(val_result)                           # (3,  312, 27)
 
     all_scores =  None
     all_normals = None
-    feature_num = np_test_result.shape[-1]
-
-    labels = np_test_result[2, :, 0].tolist()
+    feature_num = np_test_result.shape[-1]                         # 27
+    labels = np_test_result[2, :, 0].tolist()                      # len : 2044 (0.0 or 1.0)
 
     for i in range(feature_num):
-        test_re_list = np_test_result[:2,:,i]
-        val_re_list = np_val_result[:2,:,i]
+        test_re_list = np_test_result[:2,:,i]                      # (2, 2044)
+        val_re_list = np_val_result[:2,:,i]                        # (2,  312)
 
-        scores = get_err_scores(test_re_list, val_re_list)
-        normal_dist = get_err_scores(val_re_list, val_re_list)
+        scores = get_err_scores(test_re_list, val_re_list)         # (2044,)
+        normal_dist = get_err_scores(val_re_list, val_re_list)     # ( 312,)
 
-        if all_scores is None:
+        if all_scores is None:                                     # i = 0 の時実行
             all_scores = scores
             all_normals = normal_dist
-        else:
-            all_scores = np.vstack((
-                all_scores,
-                scores
-            ))
-            all_normals = np.vstack((
-                all_normals,
-                normal_dist
-            ))
+        else:                                                      # i = 1 ~ 26 の時実行
+            all_scores = np.vstack((all_scores, scores))           # all_scores  : (2, 2044) → (3, 2044) → ... → (27, 2044)
+            all_normals = np.vstack((all_normals, normal_dist))    # all_normals : (2,  312) → (3,  312) → ... → (27,  312)
 
     return all_scores, all_normals
 
