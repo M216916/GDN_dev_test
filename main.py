@@ -181,9 +181,9 @@ class Main():
         return train_dataloader, val_dataloader
     
 
-    def get_score(self, test_result, val_result):
+    def get_score(self, test_result, val_result):                                                  # test_result[2][2043] : len(27) ／ val_result[2][311] : len(27)
 
-        feature_num = len(test_result[0][0])                                                       # 27
+        feature_num = len(test_result[0][0])                                                       # 27 (すべて 0.0 or 1.0)
         np_test_result = np.array(test_result)                                                     # (3, 2044, 27)
         np_val_result = np.array(val_result)                                                       # (3,  312, 27)
 
