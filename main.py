@@ -63,7 +63,7 @@ class Main():
         self.feature_map = feature_map
 
         train_dataset_indata = construct_data(train, feature_map, labels=0)                   # (28, 1565)  # train には28行目に [0, 0, ... , 0] を追加
-        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())  # (28, 2049)
+        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())  # (28, 2049)  # test  には28行目に元の attack 列
 
 
         cfg = {
@@ -76,11 +76,11 @@ class Main():
         
              #【train】                                          #【test】
              #    [0][0]     [0][1]    [0][2]    [0][3]          #    [0][0]     [0][1]    [0][2]    [0][3]
-             #    (27,5)      (27)       ()      (2,702)         #    (27,5)      (27)       ()      (2,702)
+             #    (27,5)      (27)      (0)      (2,702)         #    (27,5)      (27)    (0 or 1)   (2,702)
              #       …         …         …         …             #       …         …         …         …
              #       …         …         …         …             #       …         …         …         …
              # [1559][0]  [1559][1]  [1559][2]  [1559][3]        # [2043][0]  [2043][1]  [2043][2]  [2043][3]
-             #    (27,5)      (27)       ()      (2,702)         #    (27,5)      (27)       ()      (2,702)
+             #    (27,5)      (27)      (0)      (2,702)         #    (27,5)      (27)    (0 or 1)   (2,702)
 
         train_dataloader, val_dataloader = self.get_loaders(train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
 
