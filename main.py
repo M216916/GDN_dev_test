@@ -51,17 +51,18 @@ class Main():
             train = train.drop(columns=['attack'])
 
         feature_map = get_feature_map(dataset)                                            # M-6, M-1, M-2, S-2 … : len 27
-        fc_struc = get_fc_graph_struc(dataset)                                            # M-6:[M-1, M-2, S-2 …], M-1:[M-6, M-2, S-2 …],  … : len 27
+        fc_struc = get_fc_graph_struc(dataset)                                            # M-6:[M-1, M-2, S-2 …], M-1:[M-6, M-2, S-2 …],  … : ノード全702組
 
         set_device(env_config['device'])
         self.device = get_device()                                                        # cpu
 
         fc_edge_index = build_loc_net(fc_struc, list(train.columns), feature_map=feature_map)
-        fc_edge_index = torch.tensor(fc_edge_index, dtype = torch.long)                       # (2,702) : len 2   torch.int64に変換
-
+        fc_edge_index = torch.tensor(fc_edge_index, dtype = torch.long)
+                  # tensor[[ 1, 2, 3, ... , 24, 25, 26, 0, 2 ,3, ... , 24, 25, 26, ... ,  0,  1,  2  ... , 23, 24, 25],
+                  #        [ 0, 0, 0, ... ,  0,  0,  0, 1, 1, 1, ... ,   1, 1,  1, ... , 26, 26, 26, ... , 26, 26, 26]] → (2,702) : len 2   torch.int64に変換
         self.feature_map = feature_map
 
-        train_dataset_indata = construct_data(train, feature_map, labels=0)                   # (28, 1565)
+        train_dataset_indata = construct_data(train, feature_map, labels=0)                   # (28, 1565)  # train には28行目に [0, 0, ... , 0] を追加
         test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())  # (28, 2049)
 
 
