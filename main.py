@@ -146,7 +146,7 @@ class Main():
                 test_dataset=self.test_dataset,                             # datasets.TimeDataset.TimeDataset object
                 train_dataset=self.train_dataset,                           # datasets.TimeDataset.TimeDataset object
                 dataset_name=self.env_config['dataset']                     # msl
-            )
+            )                                                               # self.train_log : len(39 * epoch)
         
         # test            
         self.model.load_state_dict(torch.load(model_save_path))
