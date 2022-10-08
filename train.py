@@ -64,22 +64,24 @@ def train(model = None, save_path = '', config={},  train_dataloader=None, val_d
             _start = time.time()
 
             x, labels, edge_index = [item.float().to(device) for item in [x, labels, edge_index]]
-
+                                                             # x          : torch.Size[32, 27, 5]
+                                                             # labels     : torch.Size[32, 27]
+                                                             # edge_index : torch.Size[32, 2, 702]
             optimizer.zero_grad()
-            out = model(x, edge_index).float().to(device)
-            loss = loss_func(out, labels)
+            out = model(x, edge_index).float().to(device)    # out        : torch.Size[32, 27]
+            loss = loss_func(out, labels)                    # MSE loss
             
             loss.backward()
             optimizer.step()
 
             
-            train_loss_list.append(loss.item())
-            acu_loss += loss.item()
+            train_loss_list.append(loss.item())              # loss値 を記録していく (39 * epoch数)
+            acu_loss += loss.item()                          # loss値 の1epochあたりの和 (→平均化する)
                 
             i += 1
 
 
-        # each epoch
+        # each epoch                                         # epoch ごとにloss値の平均を出力
         print('epoch ({} / {}) (Loss:{:.8f}, ACU_loss:{:.8f})'.format(
                         i_epoch, epoch, 
                         acu_loss/len(dataloader), acu_loss), flush=True
@@ -88,24 +90,22 @@ def train(model = None, save_path = '', config={},  train_dataloader=None, val_d
         # use val dataset to judge
         if val_dataloader is not None:
 
-            val_loss, val_result = test(model, val_dataloader)
+            val_loss, val_result = test(model, val_dataloader)   # val_loss を出力
 
-            if val_loss < min_loss:
-                torch.save(model.state_dict(), save_path)
-
+            if val_loss < min_loss:                              # val_loss の最小値が更新されなければ stop_improve_count +1 
+                torch.save(model.state_dict(), save_path)        #  → early_stop_win に到達したら break
                 min_loss = val_loss
                 stop_improve_count = 0
             else:
                 stop_improve_count += 1
 
-
             if stop_improve_count >= early_stop_win:
                 break
 
-        else:
-            if acu_loss < min_loss :
-                torch.save(model.state_dict(), save_path)
-                min_loss = acu_loss
+        else:                                                    # ×
+            if acu_loss < min_loss :                             # ×
+                torch.save(model.state_dict(), save_path)        # ×
+                min_loss = acu_loss                              # ×
 
 
 
