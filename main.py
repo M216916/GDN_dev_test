@@ -149,8 +149,8 @@ class Main():
             )                                                               # self.train_log : len(39 * epoch)
         
         # test            
-        self.model.load_state_dict(torch.load(model_save_path))
-        best_model = self.model.to(self.device)
+        self.model.load_state_dict(torch.load(model_save_path))             # ./pretrained/make/best_****.pt から最新モデルを読み込み
+        best_model = self.model.to(self.device)                             # best_model
 
         _, self.test_result = test(best_model, self.test_dataloader)        # _:スカラー ／ self.test_result:(3,2044,27)
         _, self.val_result = test(best_model, self.val_dataloader)          # _:スカラー ／ self.test_result:(3, 312,27)
