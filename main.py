@@ -292,6 +292,22 @@ if __name__ == "__main__":
     main.run()
 
 
-
+# 【GDN】
+#   (embedding) : Embedding(27, 64)
+#
+#   (bn_outlayer_in) : BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+#
+#   (gnn_layers) : ModuleList(
+#     ┗━(0): GNNLayer
+#        ┣━(gnn)       : GraphLayer(5, 64, heads=1)
+#        ┣━(bn)        : BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+#        ┣━(relu)      : ReLU()
+#        ┗━(leaky_relu): LeakyReLU(negative_slope=0.01)
+#
+#   (out_layer) : OutLayer
+#     ┗━(mlp) : ModuleList
+#        ┗━(0) : Linear(in_features=64, out_features=1, bias=True)
+#
+#   (dp): Dropout(p=0.2, inplace=False)
 
 
