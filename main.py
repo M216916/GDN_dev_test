@@ -187,6 +187,21 @@ class Main():
         feature_num = len(test_result[0][0])                                                       # 27 (すべて 0.0 or 1.0)
         np_test_result = np.array(test_result)                                                     # (3, 2044, 27)
         np_val_result = np.array(val_result)                                                       # (3,  312, 27)
+        
+        
+        import matplotlib.pyplot as plt
+
+        folder_path = './img/'
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        for i in range(np_test_result.shape[2]):
+            fig = plt.figure()
+            plt.plot(np_test_result[0,:,i], label='Prediction')
+            plt.plot(np_test_result[1,:,i], label='GroundTruth')
+            plt.legend()
+            plt.show()
+            fig.savefig(folder_path + "img_" + str(i) + ".png")
 
         test_labels = np_test_result[2, :, 0].tolist()                                             # len : 2044  0/1 のみで構成
     
