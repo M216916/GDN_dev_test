@@ -202,7 +202,7 @@ class Main():
             plt.legend()
             plt.show()
             fig.savefig(folder_path + "img_" + str(i) + ".png")
-
+        '''
         test_labels = np_test_result[2, :, 0].tolist()                                             # len : 2044  0/1 のみで構成
     
         test_scores, normal_scores = get_full_err_scores(test_result, val_result)                  # test_scores   : (27, 2044)
@@ -223,7 +223,7 @@ class Main():
         print(f'F1 score: {info[0]}')
         print(f'precision: {info[1]}')
         print(f'recall: {info[2]}\n')
-
+        '''
 
     def get_save_path(self, feature_name=''):
 
