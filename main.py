@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
 import torch
@@ -36,51 +35,37 @@ import random
 class Main():
     def __init__(self, train_config, env_config, debug=False):
 
-        self.train_config = train_config        # batch:32, epoch:3, slide_win:5, dim:64, slide_stride:1, comment:msl, seed:5
-                                                # out_layer_num:1, out_layer_inter_dim:128, decay: 0.0, val_ratio:0.2, topk:5
-        self.env_config = env_config            # save_path:msl, dataset:msl, report:best, device:cpu, load_model_path: ''
+        self.train_config = train_config
+        self.env_config = env_config
         self.datestr = None
 
-        dataset = self.env_config['dataset']                                              # msl
-        train_orig = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)     # train : (1565,27)
-        test_orig = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)       # test  : (2049,28) columnに'attack'がある
-       
-        train, test = train_orig, test_orig
-
+        dataset = self.env_config['dataset']
+        train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
+        test  = pd.read_csv(f'./data/{dataset}/test.csv', sep=',', index_col=0)
+        
         if 'attack' in train.columns:
             train = train.drop(columns=['attack'])
 
-        feature_map = get_feature_map(dataset)                                            # M-6, M-1, M-2, S-2 … : len 27
-        fc_struc = get_fc_graph_struc(dataset)                                            # M-6:[M-1, M-2, S-2 …], M-1:[M-6, M-2, S-2 …],  … : ノード全702組
+        feature_map = get_feature_map(dataset)
+        fc_struc = get_fc_graph_struc(dataset)
 
         set_device(env_config['device'])
-        self.device = get_device()                                                        # cpu
+        self.device = get_device()
 
         fc_edge_index = build_loc_net(fc_struc, list(train.columns), feature_map=feature_map)
         fc_edge_index = torch.tensor(fc_edge_index, dtype = torch.long)
-                  # tensor[[ 1, 2, 3, ... , 24, 25, 26, 0, 2 ,3, ... , 24, 25, 26, ... ,  0,  1,  2  ... , 23, 24, 25],
-                  #        [ 0, 0, 0, ... ,  0,  0,  0, 1, 1, 1, ... ,   1, 1,  1, ... , 26, 26, 26, ... , 26, 26, 26]] → (2,702) : len 2   torch.int64に変換
+
         self.feature_map = feature_map
 
-        train_dataset_indata = construct_data(train, feature_map, labels=0)                   # (28, 1565)  # train には28行目に [0, 0, ... , 0] を追加
-        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())  # (28, 2049)  # test  には28行目に元の attack 列
+        train_dataset_indata = construct_data(train, feature_map, labels=0)
+        test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())
 
 
-        cfg = {
-            'slide_win': train_config['slide_win'],                                           # slide_win    : 5
-            'slide_stride': train_config['slide_stride'],                                     # slide_stride : 1
-        }
+        cfg = {'slide_win': train_config['slide_win'],
+               'slide_stride': train_config['slide_stride'],}
 
         train_dataset = TimeDataset(train_dataset_indata, fc_edge_index, mode='train', config=cfg)    
         test_dataset = TimeDataset(test_dataset_indata, fc_edge_index, mode='test', config=cfg)
-        
-             #【train】                                          #【test】
-             #    [0][0]     [0][1]    [0][2]    [0][3]          #    [0][0]     [0][1]    [0][2]    [0][3]
-             #    (27,5)      (27)      (0)      (2,702)         #    (27,5)      (27)    (0 or 1)   (2,702)
-             #       …         …         …         …             #       …         …         …         …
-             #       …         …         …         …             #       …         …         …         …
-             # [1559][0]  [1559][1]  [1559][2]  [1559][3]        # [2043][0]  [2043][1]  [2043][2]  [2043][3]
-             #    (27,5)      (27)      (0)      (2,702)         #    (27,5)      (27)    (0 or 1)   (2,702)
 
         train_dataloader, val_dataloader = self.get_loaders(train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
 
@@ -93,31 +78,8 @@ class Main():
         self.test_dataloader = DataLoader(test_dataset, batch_size=train_config['batch'],
                             shuffle=False, num_workers=0)
 
-                                        # import pprint
-                                        # pprint.pprint(vars(self.test_dataloader))
-        
-                                        # 【self.train_dataloader】【self.val_dataloader】【self.test_dataloader】
-                                        # _DataLoader__initialized             : True
-                                        # _DataLoader__multiprocessing_context : None
-                                        # _IterableDataset_len_called          : None
-                                        # _dataset_kind                        : 0
-                                        # batch_sampler                        : <torch.utils.data.sampler.BatchSampler object at ~>
-                                        # batch_size                           : 32
-                                        # collate_fn                           : <function default_collate at ~>
-                                        # dataset                              : <torch.utils.data.dataset.Subset object at ~>
-                                        # drop_last                            : False
-                                        # num_workers                          : 0
-                                        # pin_memory                           : False
-                                        # sampler                              : <torch.utils.data.sampler.RandomSampler object at ~>
-                                        # timeout                              : 0
-                                        # worker_init_fn                       : None
-
-        
-        
-
         edge_index_sets = []
-        edge_index_sets.append(fc_edge_index)                               # edge_index_sets[0][0] : 1,2,3,...,25,26,0,2,3,...,25,26,..., 0, 1, 2,...,24,25 (702)
-                                                                            #                [0][1] : 0,0,0,..., 0, 0,1,1,1,..., 1, 1,...,26,26,26,...,26,26 (702)
+        edge_index_sets.append(fc_edge_index)
 
         self.model = GDN(edge_index_sets, len(feature_map),                 # len(feature_map) = 27
                 dim=train_config['dim'],                                    # 64
@@ -202,28 +164,6 @@ class Main():
             plt.legend()
             plt.show()
             fig.savefig(folder_path + "img_" + str(i) + ".png")
-        '''
-        test_labels = np_test_result[2, :, 0].tolist()                                             # len : 2044  0/1 のみで構成
-    
-        test_scores, normal_scores = get_full_err_scores(test_result, val_result)                  # test_scores   : (27, 2044)
-                                                                                                   # normal_scores : (27,  312)
-
-        top1_best_info = get_best_performance_data(test_scores, test_labels, topk=1)               # len : 5
-        top1_val_info = get_val_performance_data(test_scores, normal_scores, test_labels, topk=1)  # len : 5
-
-
-        print('=========================** Result **============================\n')
-
-        info = None
-        if self.env_config['report'] == 'best':
-            info = top1_best_info
-        elif self.env_config['report'] == 'val':   # ×
-            info = top1_val_info                   # ×
-
-        print(f'F1 score: {info[0]}')
-        print(f'precision: {info[1]}')
-        print(f'recall: {info[2]}\n')
-        '''
 
     def get_save_path(self, feature_name=''):
 
@@ -305,24 +245,3 @@ if __name__ == "__main__":
 
     main = Main(train_config, env_config, debug=False)
     main.run()
-
-
-# 【GDN】
-#   (embedding) : Embedding(27, 64)
-#
-#   (bn_outlayer_in) : BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-#
-#   (gnn_layers) : ModuleList(
-#     ┗━(0): GNNLayer
-#        ┣━(gnn)       : GraphLayer(5, 64, heads=1)
-#        ┣━(bn)        : BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-#        ┣━(relu)      : ReLU()
-#        ┗━(leaky_relu): LeakyReLU(negative_slope=0.01)
-#
-#   (out_layer) : OutLayer
-#     ┗━(mlp) : ModuleList
-#        ┗━(0) : Linear(in_features=64, out_features=1, bias=True)
-#
-#   (dp): Dropout(p=0.2, inplace=False)
-
-
