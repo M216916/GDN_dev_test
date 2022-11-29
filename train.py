@@ -15,28 +15,25 @@ from torch.utils.data import DataLoader, random_split, Subset
 from scipy.stats import iqr
 
 
-
-
 def loss_func(y_pred, y_true):
     loss = F.mse_loss(y_pred, y_true, reduction='mean')
-
     return loss
 
 
+def CE_loss_func(y_pred, y_true):
+    return F.cross_entropy(y_pred, y_true)
 
-def train(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
+
+def pre_training(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
 
     seed = config['seed']
-
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=config['decay'])
-
     now = time.time()
     
     train_loss_list = []
     cmp_loss_list = []
 
     device = get_device()
-
 
     acu_loss = 0
     min_loss = 1e+8
@@ -64,36 +61,27 @@ def train(model = None, save_path = '', config={},  train_dataloader=None, val_d
             _start = time.time()
 
             x, labels, edge_index = [item.float().to(device) for item in [x, labels, edge_index]]
-                                                             # x          : torch.Size[32, 27, 5]
-                                                             # labels     : torch.Size[32, 27]
-                                                             # edge_index : torch.Size[32, 2, 702]
+
             optimizer.zero_grad()
-            out = model(x, edge_index).float().to(device)    # out        : torch.Size[32, 27]
-            loss = loss_func(out, labels)                    # MSE loss
+            out = model(x, edge_index).float().to(device)
+            loss = loss_func(out, labels)
             
             loss.backward()
             optimizer.step()
 
-            
-            train_loss_list.append(loss.item())              # loss値 を記録していく (39 * epoch数)
-            acu_loss += loss.item()                          # loss値 の1epochあたりの和 (→平均化する)
+            train_loss_list.append(loss.item())
+            acu_loss += loss.item()
                 
             i += 1
 
-
-        # each epoch                                         # epoch ごとにloss値の平均を出力
         print('epoch ({} / {}) (Loss:{:.8f}, ACU_loss:{:.8f})'.format(
-                        i_epoch, epoch, 
-                        acu_loss/len(dataloader), acu_loss), flush=True
-            )
+                i_epoch, epoch, acu_loss/len(dataloader), acu_loss), flush=True)
 
-        # use val dataset to judge
         if val_dataloader is not None:
+            val_loss, val_result = pre_test(model, val_dataloader)
 
-            val_loss, val_result = test(model, val_dataloader)   # val_loss を出力
-
-            if val_loss < min_loss:                              # val_loss の最小値が更新されなければ stop_improve_count +1 
-                torch.save(model.state_dict(), save_path)        #  → early_stop_win に到達したら break
+            if val_loss < min_loss:
+                torch.save(model.state_dict(), save_path)
                 min_loss = val_loss
                 stop_improve_count = 0
             else:
@@ -107,6 +95,101 @@ def train(model = None, save_path = '', config={},  train_dataloader=None, val_d
                 torch.save(model.state_dict(), save_path)        # ×
                 min_loss = acu_loss                              # ×
 
+    return train_loss_list
 
+
+
+
+
+
+
+
+
+
+
+
+def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
+
+    seed = config['seed']
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=config['decay'])
+    now = time.time()
+    
+    train_loss_list = []
+    cmp_loss_list = []
+
+    device = get_device()
+
+    acu_loss = 0
+    min_loss = 1e+8
+    min_f1 = 0
+    min_pre = 0
+    best_prec = 0
+
+    i = 0
+    epoch = config['epoch']
+    early_stop_win = 15
+
+    '''
+    load_path = '/home/inaba/GDN_7/pretrained/yfinance_8/best_11|24-18:19:13.pt'
+    load_weights = torch.load(load_path)
+    model.embedding.weight = nn.Parameter(load_weights['embedding.weight'])
+    '''
+
+    model.train()
+
+    log_interval = 1000
+    stop_improve_count = 0
+
+    dataloader = train_dataloader
+
+    for i_epoch in range(epoch):
+
+        sum_loss = 0
+        model.train()
+
+        for x, labels, attack_labels, edge_index, x_non, true in dataloader:
+            _start = time.time()
+
+            x, labels, edge_index, x_non, true = [item.float().to(device) for item in [x, labels, edge_index, x_non, true]]
+
+            optimizer.zero_grad()
+            out = model(x, edge_index, x_non)
+            out = out.float().to(device)
+
+            true = true.to(torch.int64)
+            true = true.view(-1)            
+
+            CE_loss = CE_loss_func(out, true)
+            
+            CE_loss.backward()
+            optimizer.step()
+            
+            train_loss_list.append(CE_loss.item())
+            sum_loss += CE_loss.item()
+                
+            i += 1
+
+        print('epoch ({} / {}) (Loss:{:.8f})'.
+            format(i_epoch, epoch, sum_loss/len(dataloader)), flush=True)
+
+        # use val dataset to judge
+        if val_dataloader is not None:
+            val_loss = fin_test(model, val_dataloader, config)
+
+            if val_loss < min_loss:
+                torch.save(model.state_dict(), save_path)
+
+                min_loss = val_loss
+                stop_improve_count = 0
+            else:
+                stop_improve_count += 1
+
+            if stop_improve_count >= early_stop_win:
+                break
+
+        else:                                                    # ×
+            if sum_loss < min_loss :                             # ×
+                torch.save(model.state_dict(), save_path)        # ×
+                min_loss = sum_loss                              # ×
 
     return train_loss_list
