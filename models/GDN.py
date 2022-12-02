@@ -189,8 +189,6 @@ class pre_GDN(nn.Module):
         return out
 
 
-
-
 class fin_GDN(nn.Module):
 
     def __init__(self, edge_index_sets, node_num, dim=64, out_layer_inter_dim=256, input_dim=10, out_layer_num=1, topk=20, config={}):
