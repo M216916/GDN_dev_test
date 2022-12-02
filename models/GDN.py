@@ -15,7 +15,7 @@ from .graph_layer import GraphLayer
 
 
 def get_batch_edge_index(org_edge_index, batch_num, node_num):
-    # org_edge_index:(2, edge_num)
+
     edge_index = org_edge_index.clone().detach()
     edge_num = org_edge_index.shape[1]
     batch_edge_index = edge_index.repeat(1,batch_num).contiguous()
@@ -41,6 +41,7 @@ class Net(pl.LightningModule):
 
 
 class OutLayer(nn.Module):
+
     def __init__(self, in_num, node_num, layer_num, inter_num = 512):
         super(OutLayer, self).__init__()
 
@@ -73,6 +74,7 @@ class OutLayer(nn.Module):
 
 
 class GNNLayer(nn.Module):
+
     def __init__(self, in_channel, out_channel, inter_dim=0, heads=1, node_num=100):
         super(GNNLayer, self).__init__()
 
@@ -92,10 +94,10 @@ class GNNLayer(nn.Module):
 
 
 class pre_GDN(nn.Module):
+
     def __init__(self, edge_index_sets, node_num, dim=64, out_layer_inter_dim=256, input_dim=10, out_layer_num=1, topk=20):
 
         super(pre_GDN, self).__init__()
-
         self.edge_index_sets = edge_index_sets
 
         device = get_device()
@@ -122,6 +124,7 @@ class pre_GDN(nn.Module):
 
 
     def init_params(self):
+
         nn.init.kaiming_uniform_(self.embedding.weight, a=math.sqrt(5))
 
 
@@ -175,13 +178,13 @@ class pre_GDN(nn.Module):
 
         indexes = torch.arange(0,node_num).to(device) 
         
-        out = torch.mul(x, self.embedding(indexes))         # torch.Size[32, 27, 64]     # out[i,j,k] = x[i,j,k] * emb[j,k]
-        out = out.permute(0,2,1)                            # torch.Size[32, 64, 27]     # 要素入れ替え
-        out = F.relu(self.bn_outlayer_in(out))              # torch.Size[32, 64, 27]     # Batch Normalization
-        out = out.permute(0,2,1)                            # torch.Size[32, 27, 64]     # 要素入れ替え
-        out = self.dp(out)                                  # torch.Size[32, 27, 64]     # drop out でニューロンを調整(過学習抑制)
-        out = self.out_layer(out)                           # torch.Size[32, 27,  1]     # あとで調べる
-        out = out.view(-1, node_num)                        # torch.Size[32, 27]
+        out = torch.mul(x, self.embedding(indexes))
+        out = out.permute(0,2,1)
+        out = F.relu(self.bn_outlayer_in(out))
+        out = out.permute(0,2,1)
+        out = self.dp(out)
+        out = self.out_layer(out)
+        out = out.view(-1, node_num)
    
         return out
 
@@ -189,6 +192,7 @@ class pre_GDN(nn.Module):
 
 
 class fin_GDN(nn.Module):
+
     def __init__(self, edge_index_sets, node_num, dim=64, out_layer_inter_dim=256, input_dim=10, out_layer_num=1, topk=20, config={}):
 
         super(fin_GDN, self).__init__()
@@ -219,6 +223,7 @@ class fin_GDN(nn.Module):
 
     
     def init_params(self):
+        
         nn.init.kaiming_uniform_(self.embedding.weight, a=math.sqrt(5))
 
 

@@ -3,7 +3,7 @@ DATASET=$2
 
 seed=5
 BATCH_SIZE=32
-SLIDE_WIN=5
+SLIDE_WIN=30
 dim=16
 out_layer_num=1
 SLIDE_STRIDE=1
@@ -16,7 +16,7 @@ decay=0
 path_pattern="${DATASET}"
 COMMENT="${DATASET}"
 
-EPOCH=2
+EPOCH=10
 report='best'
 
 if [[ "$gpu_n" == "cpu" ]]; then

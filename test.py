@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import torch.nn.functional as F
+from sklearn.metrics import confusion_matrix
 from util.data import *
 from util.preprocess import *
 
@@ -80,11 +81,12 @@ def pre_test(model, dataloader):
 
 
 
-def fin_test(model, dataloader, config):
+def fin_test(model, dataloader, config, flag):
 
     device = get_device()
 
     test_loss_list = []
+    matrix = np.array([[0,0,0],[0,0,0],[0,0,0]])
     now = time.time()
 
     test_len = len(dataloader)
@@ -101,7 +103,10 @@ def fin_test(model, dataloader, config):
             out = out.float().to(device)
 
             true = true.to(torch.int64)
-            true = true.view(-1)  
+            true = true.view(-1)
+
+            if flag != 'val':
+                matrix = matrix + confusion_matrix(true, torch.argmax(out, dim=1), labels = [0,1,2])
 
             CE_loss = CE_loss_func(out, true)
         
@@ -115,4 +120,33 @@ def fin_test(model, dataloader, config):
 
     avg_loss = sum(test_loss_list)/len(test_loss_list)
 
-    return avg_loss
+    if flag == 'val':
+        return avg_loss
+
+    else:
+        print("=" * 50)
+        print(matrix)
+
+        accuracy = np.trace(matrix)/np.sum(matrix)
+        print("=" * 50)
+        print('accuracy      :{0:4f}'.format(accuracy))
+        print("=" * 50)
+
+        precision_ave = 0
+        recall_ave = 0
+        F1_ave = 0
+
+        for i in range(3):
+            precision = matrix[i,i]/np.sum(matrix[:,i])
+            precision_ave = precision_ave + precision 
+            recall = matrix[i,i]/np.sum(matrix[i,])
+            recall_ave = recall_ave + recall
+            F1 = (2*precision * recall)/(precision + recall)
+            F1_ave = F1_ave + F1
+            print('【{0}】precision:{1:4f}  recall:{2:4f}  F1:{3:4f}'.format(i,precision,recall,F1))
+
+        print("=" * 50)
+        print(precision_ave/3,recall_ave/3,F1_ave/3)
+        print("=" * 50)
+
+        return avg_loss

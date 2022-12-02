@@ -27,6 +27,7 @@ import argparse
 from pathlib import Path
 import json
 import random
+import math
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -40,12 +41,21 @@ class Main():
 
         dataset = self.env_config['dataset']
         train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
-        test  = pd.read_csv(f'./data/{dataset}/test.csv',  sep=',', index_col=0)
         true  = pd.read_csv(f'./data/{dataset}/true.csv',  sep=',', index_col=0)
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
 
-        if 'attack' in train.columns:
-            train = train.drop(columns=['attack'])
+        # train → train:test(8:2) に分割
+        '''
+        train_end  = math.ceil((train.shape[0] - train_config['slide_win']) * 0.8) + train_config['slide_win']
+        test_start = math.ceil((train.shape[0] - train_config['slide_win']) * 0.8) -1
+        train_end  = 1900 + train_config['slide_win']
+        fin_train_start = 1700
+        fin_test_start = 1900 - 1
+        '''
+        
+        pre_train = train.iloc[    :2400 + train_config['slide_win'],:]
+        fin_train = train.iloc[2000:2400 + train_config['slide_win'],:]
+        fin_test  = train.iloc[                              2400-1:,:]
 
         feature_map = get_feature_map(dataset)
         fc_struc = get_fc_graph_struc(dataset)
@@ -67,40 +77,32 @@ class Main():
 
         # pre_training data
 
-        pre_train_dataset_indata = construct_data(train, feature_map, labels=0)
-        pre_test_dataset_indata = construct_data(test, feature_map, labels=test.attack.tolist())
+        pre_train_dataset_indata = construct_data(pre_train, feature_map, labels=0)
 
-        pre_train_dataset = TimeDataset(pre_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, true=true, flag='pre')   
-        pre_test_dataset  = TimeDataset(pre_test_dataset_indata,  fc_edge_index, mode='test',  config=cfg, x_non=x_non, true=true, flag='pre')
-
+        pre_train_dataset = TimeDataset(pre_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='pre')   
         pre_train_dataloader, pre_val_dataloader = self.get_loaders(
             pre_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
 
-        self.pre_train_dataset = pre_train_dataset
-        self.pre_test_dataset = pre_test_dataset
         self.pre_train_dataloader = pre_train_dataloader
-        self.pre_val_dataloader = pre_val_dataloader
-        self.pre_test_dataloader = DataLoader(pre_test_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
+        self.pre_val_dataloader = pre_val_dataloader        
 
 
         # fine_tunig data
 
-        fin_train = pd.read_csv(f'./data/{dataset}/test.csv',  sep=',', index_col=0)  # test.csv → 学習用
-        if 'attack' in train.columns:
-            train = train.drop(columns=['attack'])
-
         fin_train_dataset_indata = construct_data(fin_train, feature_map, labels=0)
+        fin_test_dataset_indata  = construct_data(fin_test,  feature_map, labels=0)
         
-        fin_train_dataset = TimeDataset(fin_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, true=true, flag='fin')
+        fin_train_dataset = TimeDataset(fin_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
+        fin_test_dataset  = TimeDataset(fin_test_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
 
         fin_train_dataloader, fin_val_dataloader = self.get_loaders(
             fin_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
+        fin_test_dataloader = DataLoader(fin_test_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
 
-        self.fin_train_dataset = fin_train_dataset
-        self.fin_test_dataset = None
         self.fin_train_dataloader = fin_train_dataloader
         self.fin_val_dataloader = fin_val_dataloader
-        self.fin_test_dataloader = None
+        self.fin_test_dataloader = fin_test_dataloader
+
 
         self.pre_model = pre_GDN(edge_index_sets, len(feature_map),
                 dim=train_config['dim'],
@@ -132,21 +134,19 @@ class Main():
                 train_dataloader=self.pre_train_dataloader,
                 val_dataloader=self.pre_val_dataloader,
                 feature_map=self.feature_map,
-                test_dataloader=self.pre_test_dataloader,
-                test_dataset=self.pre_test_dataset,
-                train_dataset=self.pre_train_dataset,
+                test_dataloader=None,
+                test_dataset=None,
+                train_dataset=None,
                 dataset_name=self.env_config['dataset']
             )
 
         pre_load_weights = torch.load(pre_model_save_path)
-
         self.pre_model.load_state_dict(torch.load(pre_model_save_path))
         best_model = self.pre_model.to(self.device)
 
-        _, self.test_result = pre_test(best_model, self.pre_test_dataloader)
         _, self.val_result = pre_test(best_model, self.pre_val_dataloader)
 
-        self.get_figure(self.test_result, self.val_result)
+        self.get_figure(self.val_result)
 
 
 ########################################################################################################
@@ -164,11 +164,17 @@ class Main():
                 train_dataloader=self.fin_train_dataloader,
                 val_dataloader=self.fin_val_dataloader,
                 feature_map=self.feature_map,
-                test_dataloader=self.fin_test_dataloader,
-                test_dataset=self.fin_test_dataset,
-                train_dataset=self.fin_train_dataset,
+                test_dataloader=None,
+                test_dataset=None,
+                train_dataset=None,
                 dataset_name=self.env_config['dataset']
             )
+
+        self.fin_model.load_state_dict(torch.load(fin_model_save_path))
+        best_model = self.fin_model.to(self.device)
+
+        Loss = fin_test(best_model, self.fin_test_dataloader, train_config, 'test')
+        print('Loss:', Loss)
 ########################################################################################################
 
 
@@ -190,29 +196,26 @@ class Main():
         val_dataloader = DataLoader(val_subset, batch_size=batch, shuffle=False)
 
         return train_dataloader, val_dataloader
-    
 
-    def get_figure(self, test_result, val_result):
 
-        feature_num = len(test_result[0][0])
-        np_test_result = np.array(test_result)
+    def get_figure(self, val_result):
+
+        feature_num = len(val_result[0][0])
         np_val_result = np.array(val_result)
         
         GDN_num = os.getcwd().replace('/home/inaba/', '')
         dataset = self.env_config['dataset']
-
         folder_path = f'/home/inaba/GDN_img/{GDN_num}/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-
         folder_path = f'/home/inaba/GDN_img/{GDN_num}/{dataset}/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)        
 
-        for i in range(np_test_result.shape[2]):
+        for i in range(np_val_result.shape[2]):
             fig = plt.figure()
-            plt.plot(np_test_result[0,:,i], label='Prediction')
-            plt.plot(np_test_result[1,:,i], label='GroundTruth')
+            plt.plot(np_val_result[0,:,i], label='Prediction')
+            plt.plot(np_val_result[1,:,i], label='GroundTruth')
             plt.legend()
             plt.show()
             fig.savefig(folder_path + "img_" + str(i) + ".png")

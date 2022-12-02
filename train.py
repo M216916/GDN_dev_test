@@ -129,18 +129,18 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
     epoch = config['epoch']
     early_stop_win = 15
 
-    '''
-    load_path = '/home/inaba/GDN_7/pretrained/yfinance_8/best_11|24-18:19:13.pt'
-    load_weights = torch.load(load_path)
-    model.embedding.weight = nn.Parameter(load_weights['embedding.weight'])
-    '''
-
     model.train()
 
     log_interval = 1000
     stop_improve_count = 0
 
     dataloader = train_dataloader
+
+#    print(len(train_dataloader.dataset))
+#    print(len(val_dataloader.dataset))
+#    print(len(train_dataloader))
+#    print(len(val_dataloader))
+
 
     for i_epoch in range(epoch):
 
@@ -174,7 +174,7 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
 
         # use val dataset to judge
         if val_dataloader is not None:
-            val_loss = fin_test(model, val_dataloader, config)
+            val_loss = fin_test(model, val_dataloader, config, 'val')
 
             if val_loss < min_loss:
                 torch.save(model.state_dict(), save_path)
