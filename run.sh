@@ -12,11 +12,11 @@ out_layer_inter_dim=128
 val_ratio=0.2
 decay=0
 
-
 path_pattern="${DATASET}"
 COMMENT="${DATASET}"
 
-EPOCH=10
+pre_EPOCH=100
+fin_EPOCH=10
 report='best'
 
 if [[ "$gpu_n" == "cpu" ]]; then
@@ -26,7 +26,8 @@ if [[ "$gpu_n" == "cpu" ]]; then
         -slide_stride $SLIDE_STRIDE \
         -slide_win $SLIDE_WIN \
         -batch $BATCH_SIZE \
-        -epoch $EPOCH \
+        -pre_epoch $pre_EPOCH \
+        -fin_epoch $fin_EPOCH \
         -comment $COMMENT \
         -random_seed $seed \
         -decay $decay \
@@ -45,7 +46,8 @@ else
         -slide_stride $SLIDE_STRIDE \
         -slide_win $SLIDE_WIN \
         -batch $BATCH_SIZE \
-        -epoch $EPOCH \
+        -pre_epoch $pre_EPOCH \
+        -fin_epoch $fin_EPOCH \
         -comment $COMMENT \
         -random_seed $seed \
         -decay $decay \

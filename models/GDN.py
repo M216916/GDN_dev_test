@@ -82,6 +82,7 @@ class GNNLayer(nn.Module):
         self.bn = nn.BatchNorm1d(out_channel)
         self.relu = nn.ReLU()
         self.leaky_relu = nn.LeakyReLU()
+        self.elu = nn.ELU()
 
     def forward(self, x, edge_index, embedding=None, node_num=0):
 
@@ -131,6 +132,11 @@ class pre_GDN(nn.Module):
     def forward(self, data, org_edge_index):
 
         x = data.clone().detach()
+
+        x_ave = torch.mean(input=x, dim=2) #
+        for i in range(x.shape[2]): #
+            x[:,:,i] = x[:,:,i] / x_ave  #
+
         edge_index_sets = self.edge_index_sets
         device = data.device
 
@@ -228,6 +234,9 @@ class fin_GDN(nn.Module):
     def forward(self, data, org_edge_index, x_non):
 
         x = data.clone().detach()
+
+#        print('▼', x.shape)
+
         edge_index_sets = self.edge_index_sets
         device = data.device
 
@@ -279,6 +288,10 @@ class fin_GDN(nn.Module):
         out = F.relu(self.bn_outlayer_in(out))
         out = out.permute(0,2,1)
         out = self.dp(out)
+
+##
+
+
         out = torch.cat([out, x_non], dim=2)
         out = out.view(out.shape[0]*out.shape[1], out.shape[2])
         out = self.net(out)

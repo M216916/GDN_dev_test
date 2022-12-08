@@ -265,7 +265,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-batch', help='batch size', type = int, default=128)
-    parser.add_argument('-epoch', help='train epoch', type = int, default=100)
+    parser.add_argument('-pre_epoch', help='train epoch', type = int, default=100)
+    parser.add_argument('-fin_epoch', help='train epoch', type = int, default=100)
     parser.add_argument('-slide_win', help='slide_win', type = int, default=15)
     parser.add_argument('-dim', help='dimension', type = int, default=64)
     parser.add_argument('-slide_stride', help='slide_stride', type = int, default=5)
@@ -296,7 +297,8 @@ if __name__ == "__main__":
 
     train_config = {
         'batch': args.batch,
-        'epoch': args.epoch,
+        'pre_epoch': args.pre_epoch,
+        'fin_epoch': args.fin_epoch,
         'slide_win': args.slide_win,
         'dim': args.dim,
         'slide_stride': args.slide_stride,

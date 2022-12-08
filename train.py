@@ -20,8 +20,22 @@ def loss_func(y_pred, y_true):
     return loss
 
 
-def CE_loss_func(y_pred, y_true):
-    return F.cross_entropy(y_pred, y_true)
+def CE_loss(input, target):
+    print(F.cross_entropy(input, target))
+    return F.cross_entropy(input, target)
+
+
+def Dice_loss(input, target):
+
+    Dice_score = 0
+    Dice_gamma = 1
+
+    _, class_num = torch.unique(target, return_counts=True)
+
+    for i in range(input.shape[0]):
+        Dice_score = Dice_score + 1/class_num[target[i]] * (input[i, target[i]] * target[i])/(input[i, target[i]] + target[i] + Dice_gamma)
+
+    return 1 - 1/input.shape[1] * Dice_score
 
 
 def pre_training(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
@@ -42,7 +56,7 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
     best_prec = 0
 
     i = 0
-    epoch = config['epoch']
+    epoch = config['pre_epoch']
     early_stop_win = 15
 
     model.train()
@@ -62,10 +76,18 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
 
             x, labels, edge_index = [item.float().to(device) for item in [x, labels, edge_index]]
 
+###############################################################################################
+#            x_ave = torch.mean(input=x, dim=2) #
+#            for i in range(x.shape[2]): #
+#                x[:,:,i] = x[:,:,i] / x_ave  #
             optimizer.zero_grad()
             out = model(x, edge_index).float().to(device)
+
+#            out = out * x_ave #
+###############################################################################################
+
+
             loss = loss_func(out, labels)
-            
             loss.backward()
             optimizer.step()
 
@@ -99,15 +121,6 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
 
 
 
-
-
-
-
-
-
-
-
-
 def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
 
     seed = config['seed']
@@ -126,7 +139,7 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
     best_prec = 0
 
     i = 0
-    epoch = config['epoch']
+    epoch = config['fin_epoch']
     early_stop_win = 15
 
     model.train()
@@ -135,12 +148,6 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
     stop_improve_count = 0
 
     dataloader = train_dataloader
-
-#    print(len(train_dataloader.dataset))
-#    print(len(val_dataloader.dataset))
-#    print(len(train_dataloader))
-#    print(len(val_dataloader))
-
 
     for i_epoch in range(epoch):
 
@@ -159,7 +166,7 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
             true = true.to(torch.int64)
             true = true.view(-1)            
 
-            CE_loss = CE_loss_func(out, true)
+            CE_loss = Dice_loss(out, true)
             
             CE_loss.backward()
             optimizer.step()
