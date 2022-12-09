@@ -130,10 +130,10 @@ def fin_test(model, dataloader, config, flag):
             if flag != 'val':
                 matrix = matrix + confusion_matrix(true, torch.argmax(out, dim=1), labels = [0,1,2])
 
-            CE_loss = Dice_loss(out, true)
+            loss = CE_loss(out, true)
         
-        test_loss_list.append(CE_loss.item())
-        acu_loss += CE_loss.item()
+        test_loss_list.append(loss.item())
+        acu_loss += loss.item()
 
         i += 1
 

@@ -133,9 +133,11 @@ class pre_GDN(nn.Module):
 
         x = data.clone().detach()
 
+#################################################################################
         x_ave = torch.mean(input=x, dim=2) #
         for i in range(x.shape[2]): #
             x[:,:,i] = x[:,:,i] / x_ave  #
+#################################################################################
 
         edge_index_sets = self.edge_index_sets
         device = data.device
@@ -189,6 +191,12 @@ class pre_GDN(nn.Module):
         out = F.relu(self.bn_outlayer_in(out))
         out = out.permute(0,2,1)
         out = self.dp(out)
+
+#################################################################################
+        out = torch.mul(out.permute(2,0,1), x_ave)
+        out = out.permute(1,2,0)
+#################################################################################
+
         out = self.out_layer(out)
         out = out.view(-1, node_num)
    
@@ -235,7 +243,11 @@ class fin_GDN(nn.Module):
 
         x = data.clone().detach()
 
-#        print('▼', x.shape)
+#################################################################################
+        x_ave = torch.mean(input=x, dim=2) #
+        for i in range(x.shape[2]): #
+            x[:,:,i] = x[:,:,i] / x_ave  #
+#################################################################################
 
         edge_index_sets = self.edge_index_sets
         device = data.device
@@ -289,8 +301,10 @@ class fin_GDN(nn.Module):
         out = out.permute(0,2,1)
         out = self.dp(out)
 
-##
-
+#################################################################################
+        out = torch.mul(out.permute(2,0,1), x_ave)
+        out = out.permute(1,2,0)
+#################################################################################
 
         out = torch.cat([out, x_non], dim=2)
         out = out.view(out.shape[0]*out.shape[1], out.shape[2])

@@ -21,7 +21,6 @@ def loss_func(y_pred, y_true):
 
 
 def CE_loss(input, target):
-    print(F.cross_entropy(input, target))
     return F.cross_entropy(input, target)
 
 
@@ -80,6 +79,7 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
 #            x_ave = torch.mean(input=x, dim=2) #
 #            for i in range(x.shape[2]): #
 #                x[:,:,i] = x[:,:,i] / x_ave  #
+
             optimizer.zero_grad()
             out = model(x, edge_index).float().to(device)
 
@@ -166,13 +166,13 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
             true = true.to(torch.int64)
             true = true.view(-1)            
 
-            CE_loss = Dice_loss(out, true)
+            loss = CE_loss(out, true)
             
-            CE_loss.backward()
+            loss.backward()
             optimizer.step()
             
-            train_loss_list.append(CE_loss.item())
-            sum_loss += CE_loss.item()
+            train_loss_list.append(loss.item())
+            sum_loss += loss.item()
                 
             i += 1
 

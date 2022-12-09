@@ -41,8 +41,9 @@ class Main():
 
         dataset = self.env_config['dataset']
         train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
-        true  = pd.read_csv(f'./data/{dataset}/true.csv',  sep=',', index_col=0)
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
+#        true  = pd.read_csv(f'./data/{dataset}/true.csv',  sep=',', index_col=0)
+
 
         # train → train:test(8:2) に分割
         '''
