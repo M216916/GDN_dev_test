@@ -28,8 +28,22 @@ def get_batch_edge_index(org_edge_index, batch_num, node_num):
 
 class Net(pl.LightningModule):
 
-    def __init__(self, input_size=56, hidden_size=10, output_size=3):
+    def __init__(self, input_size=72, hidden_size=10, output_size=3):
         super(Net, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return x
+
+
+class Net_2(pl.LightningModule):
+
+    def __init__(self, input_size=26, hidden_size=10, output_size=26):
+        super(Net_2, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
 
@@ -132,13 +146,6 @@ class pre_GDN(nn.Module):
     def forward(self, data, org_edge_index):
 
         x = data.clone().detach()
-
-#################################################################################
-        x_ave = torch.mean(input=x, dim=2) #
-        for i in range(x.shape[2]): #
-            x[:,:,i] = x[:,:,i] / x_ave  #
-#################################################################################
-
         edge_index_sets = self.edge_index_sets
         device = data.device
 
@@ -191,12 +198,6 @@ class pre_GDN(nn.Module):
         out = F.relu(self.bn_outlayer_in(out))
         out = out.permute(0,2,1)
         out = self.dp(out)
-
-#################################################################################
-        out = torch.mul(out.permute(2,0,1), x_ave)
-        out = out.permute(1,2,0)
-#################################################################################
-
         out = self.out_layer(out)
         out = out.view(-1, node_num)
    
@@ -205,7 +206,7 @@ class pre_GDN(nn.Module):
 
 class fin_GDN(nn.Module):
 
-    def __init__(self, edge_index_sets, node_num, dim=64, out_layer_inter_dim=256, input_dim=10, out_layer_num=1, topk=20, config={}):
+    def __init__(self, edge_index_sets, node_num, dim=64, dim_non=0, out_layer_inter_dim=256, input_dim=10, out_layer_num=1, topk=20, config={}):
 
         super(fin_GDN, self).__init__()
 
@@ -225,7 +226,8 @@ class fin_GDN(nn.Module):
         self.topk = topk
         self.learned_graph = None
 
-        self.net = Net()
+        self.net = Net(input_size=dim+dim_non)
+        self.net_2 = Net_2(input_size=26)
 
         self.cache_edge_index_sets = [None] * edge_set_num
         self.cache_embed_index = None
@@ -242,12 +244,6 @@ class fin_GDN(nn.Module):
     def forward(self, data, org_edge_index, x_non):
 
         x = data.clone().detach()
-
-#################################################################################
-        x_ave = torch.mean(input=x, dim=2) #
-        for i in range(x.shape[2]): #
-            x[:,:,i] = x[:,:,i] / x_ave  #
-#################################################################################
 
         edge_index_sets = self.edge_index_sets
         device = data.device
@@ -301,13 +297,14 @@ class fin_GDN(nn.Module):
         out = out.permute(0,2,1)
         out = self.dp(out)
 
-#################################################################################
-        out = torch.mul(out.permute(2,0,1), x_ave)
-        out = out.permute(1,2,0)
-#################################################################################
+##############################################################
+        x_non_2 = x_non[:,:,10:]
+        x_non_2 = self.net_2(x_non_2)
+        x_non = torch.cat([x_non[:,:,:10], x_non_2], dim=2)
+##############################################################
 
         out = torch.cat([out, x_non], dim=2)
-        out = out.view(out.shape[0]*out.shape[1], out.shape[2])
+        out = out.reshape(out.shape[0]*out.shape[1], out.shape[2])
         out = self.net(out)
 
         return out

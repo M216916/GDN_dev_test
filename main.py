@@ -42,21 +42,35 @@ class Main():
         dataset = self.env_config['dataset']
         train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
-#        true  = pd.read_csv(f'./data/{dataset}/true.csv',  sep=',', index_col=0)
 
-
-        # train → train:test(8:2) に分割
-        '''
-        train_end  = math.ceil((train.shape[0] - train_config['slide_win']) * 0.8) + train_config['slide_win']
-        test_start = math.ceil((train.shape[0] - train_config['slide_win']) * 0.8) -1
-        train_end  = 1900 + train_config['slide_win']
-        fin_train_start = 1700
-        fin_test_start = 1900 - 1
-        '''
+#        x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
         
         pre_train = train.iloc[    :2400 + train_config['slide_win'],:]
         fin_train = train.iloc[2000:2400 + train_config['slide_win'],:]
         fin_test  = train.iloc[                              2400-1:,:]
+
+
+##################################################################################################
+        '''
+        # fin_test の各クラスの数を数える
+        classes = torch.zeros(fin_test.shape[0]-train_config['slide_win'], fin_test.shape[1])
+        line = 0.009
+        for i in range(classes.shape[0]):
+            for j in range(classes.shape[1]):
+                a = fin_test.iloc[i+train_config['slide_win']-1, j]
+                b = fin_test.iloc[i+train_config['slide_win'],   j]
+                rate = (b-a)/a
+                if rate >= -line:
+                    classes[i,j] = 1
+                    if rate > line:
+                        classes[i,j] = 2
+        _, class_num = torch.unique(classes, return_counts=True)
+        print(class_num[0])
+        print(class_num[1])
+        print(class_num[2])
+        '''
+##################################################################################################
+
 
         feature_map = get_feature_map(dataset)
         fc_struc = get_fc_graph_struc(dataset)
@@ -114,6 +128,7 @@ class Main():
 
         self.fin_model = fin_GDN(edge_index_sets, len(feature_map),
                 dim=train_config['dim'],
+                dim_non=len(x_non),
                 input_dim=train_config['slide_win'],
                 out_layer_num=train_config['out_layer_num'],
                 out_layer_inter_dim=train_config['out_layer_inter_dim'],

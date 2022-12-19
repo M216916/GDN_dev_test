@@ -30,9 +30,13 @@ def Dice_loss(input, target):
     Dice_gamma = 1
 
     _, class_num = torch.unique(target, return_counts=True)
+    class_num[0] = 4305
+    class_num[1] = 9334
+    class_num[2] = 3961
 
     for i in range(input.shape[0]):
-        Dice_score = Dice_score + 1/class_num[target[i]] * (input[i, target[i]] * target[i])/(input[i, target[i]] + target[i] + Dice_gamma)
+        Dice_score = Dice_score + 1 / class_num[target[i]].to(torch.float64) * (2 * input[i, target[i]] + Dice_gamma)/(input[i, target[i]] + 1 + Dice_gamma)
+
 
     return 1 - 1/input.shape[1] * Dice_score
 
@@ -76,14 +80,14 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
             x, labels, edge_index = [item.float().to(device) for item in [x, labels, edge_index]]
 
 ###############################################################################################
-#            x_ave = torch.mean(input=x, dim=2) #
-#            for i in range(x.shape[2]): #
-#                x[:,:,i] = x[:,:,i] / x_ave  #
+            x_ave = torch.mean(input=x, dim=2) #
+            for i in range(x.shape[2]): #
+                x[:,:,i] = x[:,:,i] / x_ave  #
 
             optimizer.zero_grad()
             out = model(x, edge_index).float().to(device)
 
-#            out = out * x_ave #
+            out = out * x_ave #
 ###############################################################################################
 
 
@@ -159,6 +163,10 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
 
             x, labels, edge_index, x_non, true = [item.float().to(device) for item in [x, labels, edge_index, x_non, true]]
 
+            x_ave = torch.mean(input=x, dim=2) #
+            for i in range(x.shape[2]): #
+                x[:,:,i] = x[:,:,i] / x_ave  #
+                
             optimizer.zero_grad()
             out = model(x, edge_index, x_non)
             out = out.float().to(device)
