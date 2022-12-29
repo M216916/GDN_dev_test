@@ -43,7 +43,9 @@ class Main():
         train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
 
-#        x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
+        x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
+#        important = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 25, 29, 31, 34]
+#        x_non = x_non.iloc[important,:]
         
         pre_train = train.iloc[    :2400 + train_config['slide_win'],:]
         fin_train = train.iloc[2000:2400 + train_config['slide_win'],:]
@@ -174,6 +176,14 @@ class Main():
         for i in list(pre_load_weights.keys())[:17]:
             fin_load_weights[i] = pre_load_weights[i]
         self.fin_model.load_state_dict(fin_load_weights)
+
+
+
+##################################################################################
+#        for i in range(11):
+#            list(self.fin_model.parameters())[i].requires_grad = False
+##################################################################################
+
 
         fine_tuning(self.fin_model, fin_model_save_path, 
                 config = train_config,

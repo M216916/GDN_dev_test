@@ -226,8 +226,9 @@ class fin_GDN(nn.Module):
         self.topk = topk
         self.learned_graph = None
 
-        self.net = Net(input_size=dim+dim_non)
-        self.net_2 = Net_2(input_size=26)
+#        self.net = Net(input_size=dim+dim_non)
+        self.net = Net(input_size=dim)
+#        self.net_2 = Net_2(input_size=dim_non, output_size=dim_non)
 
         self.cache_edge_index_sets = [None] * edge_set_num
         self.cache_embed_index = None
@@ -298,12 +299,11 @@ class fin_GDN(nn.Module):
         out = self.dp(out)
 
 ##############################################################
-        x_non_2 = x_non[:,:,10:]
-        x_non_2 = self.net_2(x_non_2)
-        x_non = torch.cat([x_non[:,:,:10], x_non_2], dim=2)
+        # 非時系列属性のNN適用
+#        x_non = self.net_2(x_non)
 ##############################################################
 
-        out = torch.cat([out, x_non], dim=2)
+#        out = torch.cat([out, x_non], dim=2)
         out = out.reshape(out.shape[0]*out.shape[1], out.shape[2])
         out = self.net(out)
 

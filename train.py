@@ -168,6 +168,7 @@ def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None,
                 x[:,:,i] = x[:,:,i] / x_ave  #
                 
             optimizer.zero_grad()
+
             out = model(x, edge_index, x_non)
             out = out.float().to(device)
 
