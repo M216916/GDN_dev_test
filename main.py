@@ -15,10 +15,15 @@ from util.iostream import printsep
 from datasets.TimeDataset import TimeDataset
 from models.GDN import pre_GDN
 from models.GDN import fin_GDN
+from models.GDN import fin_GDN_onlytime
+from models.GDN import fin_GDN_nontime
 from train import pre_training
 from train import fine_tuning
 from test  import pre_test
 from test  import fin_test
+from train_boost import embedded_out
+from train_boost import lgb_training
+from train_boost import xgb_training
 from evaluate import get_err_scores, get_best_performance_data, get_val_performance_data, get_full_err_scores
 import sys
 from datetime import datetime
@@ -33,16 +38,27 @@ warnings.filterwarnings('ignore')
 
 
 class Main():
-    def __init__(self, train_config, env_config, debug=False):
+    def __init__(self, train_config, env_config, debug=False, model_flag=''):
 
         self.train_config = train_config
         self.env_config = env_config
         self.datestr = None
+        self.model_flag = model_flag
 
         dataset = self.env_config['dataset']
         train = pd.read_csv(f'./data/{dataset}/train.csv', sep=',', index_col=0)
-        x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
 
+###########################################################################
+        ave_span = 5
+        raw_num = len(train) // ave_span
+        train_ = train.iloc[:raw_num, :]
+        for i in range(train_.shape[0]):
+            for j in range(train_.shape[1]):
+                train_.iloc[i,j] = train.iloc[i*ave_span:(i+1)*ave_span, j].mean()
+        train = train_
+###########################################################################
+
+        x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
         x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
 #        important = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 25, 29, 31, 34]
 #        x_non = x_non.iloc[important,:]
@@ -50,6 +66,10 @@ class Main():
         pre_train = train.iloc[    :2400 + train_config['slide_win'],:]
         fin_train = train.iloc[2000:2400 + train_config['slide_win'],:]
         fin_test  = train.iloc[                              2400-1:,:]
+
+        pre_train = train.iloc[    : 450 + train_config['slide_win'],:]
+        fin_train = train.iloc[ 300: 450 + train_config['slide_win'],:]
+        fin_test  = train.iloc[                               450-1:,:]
 
 
 ##################################################################################################
@@ -136,10 +156,29 @@ class Main():
                 out_layer_inter_dim=train_config['out_layer_inter_dim'],
                 topk=train_config['topk']).to(self.device)
 
+        if self.model_flag=='onlytime':
+            self.fin_model = fin_GDN_onlytime(edge_index_sets, len(feature_map),
+                    dim=train_config['dim'],
+                    dim_non=len(x_non),
+                    input_dim=train_config['slide_win'],
+                    out_layer_num=train_config['out_layer_num'],
+                    out_layer_inter_dim=train_config['out_layer_inter_dim'],
+                    topk=train_config['topk']).to(self.device)
+
+        if self.model_flag=='nontime':
+            self.fin_model = fin_GDN_nontime(edge_index_sets, len(feature_map),
+                    dim=train_config['dim'],
+                    dim_non=len(x_non),
+                    input_dim=train_config['slide_win'],
+                    out_layer_num=train_config['out_layer_num'],
+                    out_layer_inter_dim=train_config['out_layer_inter_dim'],
+                    topk=train_config['topk']).to(self.device)
+
 
     def run(self):
 
-        print('\n▼▼▼ Pre-training : regression')
+        print('■■■■■', self.model_flag, '■■■■■')
+        print('▼▼▼ Pre-training : regression')
 
         if len(self.env_config['load_model_path']) > 0:
             model_save_path = self.env_config['load_model_path']
@@ -155,8 +194,7 @@ class Main():
                 test_dataloader=None,
                 test_dataset=None,
                 train_dataset=None,
-                dataset_name=self.env_config['dataset']
-            )
+                dataset_name=self.env_config['dataset'])
 
         pre_load_weights = torch.load(pre_model_save_path)
         self.pre_model.load_state_dict(torch.load(pre_model_save_path))
@@ -168,40 +206,48 @@ class Main():
 
 
 ########################################################################################################
-        print('\n▼▼▼ Fine-tuning : classifier')
-
-        fin_model_save_path = self.fin_get_save_path()[0]        
-
-        fin_load_weights = self.fin_model.state_dict()
-        for i in list(pre_load_weights.keys())[:17]:
-            fin_load_weights[i] = pre_load_weights[i]
-        self.fin_model.load_state_dict(fin_load_weights)
+        if self.model_flag=='lgb':
+            print('▼▼▼ Boosting : classifier')
+            lgb_train, lgb_val, lgb_test = embedded_out(best_model, self.fin_train_dataloader, self.fin_val_dataloader, self.fin_test_dataloader)
+            lgb_training(lgb_train, lgb_val, lgb_test)        
 
 
+        elif self.model_flag=='xgb':
+            print('▼▼▼ Boosting : classifier')
+            xgb_train, xgb_val, xgb_test = embedded_out(best_model, self.fin_train_dataloader, self.fin_val_dataloader, self.fin_test_dataloader)
+            xgb_training(xgb_train, xgb_val, xgb_test)
 
-##################################################################################
-#        for i in range(11):
-#            list(self.fin_model.parameters())[i].requires_grad = False
-##################################################################################
 
+        else:
+            print('▼▼▼ Fine-tuning : classifier')
 
-        fine_tuning(self.fin_model, fin_model_save_path, 
-                config = train_config,
-                train_dataloader=self.fin_train_dataloader,
-                val_dataloader=self.fin_val_dataloader,
-                feature_map=self.feature_map,
-                test_dataloader=None,
-                test_dataset=None,
-                train_dataset=None,
-                dataset_name=self.env_config['dataset']
-            )
+            fin_model_save_path = self.fin_get_save_path()[0]
+            fin_load_weights = self.fin_model.state_dict()
+            for i in list(pre_load_weights.keys())[:17]:
+                fin_load_weights[i] = pre_load_weights[i]
+            self.fin_model.load_state_dict(fin_load_weights)
 
-        self.fin_model.load_state_dict(torch.load(fin_model_save_path))
-        best_model = self.fin_model.to(self.device)
+            # 凍結(freeze)の場合実行
+            if self.model_flag=='freeze':
+                for i in range(11):
+                    list(self.fin_model.parameters())[i].requires_grad = False
 
-        Loss = fin_test(best_model, self.fin_test_dataloader, train_config, 'test')
-        print('Loss:', Loss)
-########################################################################################################
+            fine_tuning(self.fin_model, fin_model_save_path, 
+                    config = train_config,
+                    train_dataloader=self.fin_train_dataloader,
+                    val_dataloader=self.fin_val_dataloader,
+                    feature_map=self.feature_map,
+                    test_dataloader=None,
+                    test_dataset=None,
+                    train_dataset=None,
+                    dataset_name=self.env_config['dataset'])
+
+            self.fin_model.load_state_dict(torch.load(fin_model_save_path))
+            best_model = self.fin_model.to(self.device)
+
+            Loss = fin_test(best_model, self.fin_test_dataloader, train_config, 'test')
+            print('Loss:', Loss)
+
 
 
 
@@ -346,5 +392,7 @@ if __name__ == "__main__":
     }
     
 
-    main = Main(train_config, env_config, debug=False)
+    main = Main(train_config, env_config, debug=False, model_flag='lgb')
     main.run()
+
+    # model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']

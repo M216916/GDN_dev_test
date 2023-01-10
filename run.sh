@@ -3,7 +3,7 @@ DATASET=$2
 
 seed=5
 BATCH_SIZE=32
-SLIDE_WIN=30
+SLIDE_WIN=5
 dim=16
 out_layer_num=1
 SLIDE_STRIDE=1
@@ -16,7 +16,7 @@ path_pattern="${DATASET}"
 COMMENT="${DATASET}"
 
 pre_EPOCH=2
-fin_EPOCH=2
+fin_EPOCH=3
 
 report='best'
 
@@ -59,4 +59,5 @@ else
         -val_ratio $val_ratio \
         -report $report \
         -topk $topk
+
 fi

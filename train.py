@@ -85,7 +85,9 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
                 x[:,:,i] = x[:,:,i] / x_ave  #
 
             optimizer.zero_grad()
-            out = model(x, edge_index).float().to(device)
+#            out = model(x, edge_index).float().to(device)
+            out, _= model(x, edge_index)
+            out = out.float().to(device)
 
             out = out * x_ave #
 ###############################################################################################
@@ -125,7 +127,7 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
 
 
 
-def fine_tuning(model = None, save_path = '', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, dataset_name='swat', train_dataset=None):
+def fine_tuning(model=None, save_path='', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, train_dataset=None, dataset_name='swat'):
 
     seed = config['seed']
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=config['decay'])

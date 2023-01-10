@@ -69,7 +69,8 @@ def pre_test(model, dataloader):
 
 
         with torch.no_grad():
-            predicted = model(x, edge_index).float().to(device)
+            predicted, _ = model(x, edge_index)
+            predicted = predicted.float().to(device)
 
             predicted = predicted * x_ave #
 ###############################################################################################
