@@ -15,20 +15,18 @@ from util.data import *
 from util.preprocess import *
 
 
-def CE_loss(input, target):
-
+def CE_loss(input, target, Dice_gamma):
     return F.cross_entropy(input, target)
 
 
-def Dice_loss(input, target):
+def Dice_loss(input, target, Dice_gamma):
 
     Dice_score = 0
-    Dice_gamma = 1
 
     _, class_num = torch.unique(target, return_counts=True)
-    class_num[0] = 4305
-    class_num[1] = 9334
-    class_num[2] = 3961
+    class_num[0] = 1006
+    class_num[1] = 4614
+    class_num[2] = 1180
 
     for i in range(input.shape[0]):
         Dice_score = Dice_score + 1 / class_num[target[i]].to(torch.float64) * (2 * input[i, target[i]] + Dice_gamma)/(input[i, target[i]] + 1 + Dice_gamma)
@@ -61,21 +59,16 @@ def pre_test(model, dataloader):
     for x, y, labels, edge_index in dataloader:
         x, y, labels, edge_index = [item.to(device).float() for item in [x, y, labels, edge_index]]
 
-
 ###############################################################################################
         x_ave = torch.mean(input=x, dim=2) #
         for i in range(x.shape[2]): #
             x[:,:,i] = x[:,:,i] / x_ave #
-
-
         with torch.no_grad():
             predicted, _ = model(x, edge_index)
             predicted = predicted.float().to(device)
-
             predicted = predicted * x_ave #
 ###############################################################################################
 
-            
             loss = loss_func(predicted, y)
             
             labels = labels.unsqueeze(1).repeat(1, predicted.shape[1])
@@ -111,6 +104,14 @@ def fin_test(model, dataloader, config, flag):
 
     device = get_device()
 
+    Dice_gamma = config['Dice_gamma']
+    loss_function = config['loss_function']
+
+    if loss_function=='CE_loss':
+        loss_func = CE_loss
+    elif loss_function=='Dice_loss':
+        loss_func = Dice_loss
+
     test_loss_list = []
     matrix = np.array([[0,0,0],[0,0,0],[0,0,0]])
     now = time.time()
@@ -139,7 +140,7 @@ def fin_test(model, dataloader, config, flag):
             if flag != 'val':
                 matrix = matrix + confusion_matrix(true, torch.argmax(out, dim=1), labels = [0,1,2])
 
-            loss = CE_loss(out, true)
+            loss = loss_func(out, true, Dice_gamma)
         
         test_loss_list.append(loss.item())
         acu_loss += loss.item()

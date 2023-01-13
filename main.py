@@ -353,6 +353,8 @@ if __name__ == "__main__":
     parser.add_argument('-val_ratio', help='val ratio', type = float, default=0.1)
     parser.add_argument('-topk', help='topk num', type = int, default=20)
     parser.add_argument('-report', help='best / val', type = str, default='best')
+    parser.add_argument('-loss_function', help='loss_function', type = str, default='CE_loss')
+    parser.add_argument('-Dice_gamma', help='Dice_gamma', type = float, default=0)
     parser.add_argument('-load_model_path', help='trained model path', type = str, default='')
 
     args = parser.parse_args()
@@ -381,6 +383,8 @@ if __name__ == "__main__":
         'decay': args.decay,
         'val_ratio': args.val_ratio,
         'topk': args.topk,
+        'loss_function': args.loss_function,
+        'Dice_gamma': args.Dice_gamma,
     }
 
     env_config={
@@ -391,6 +395,21 @@ if __name__ == "__main__":
         'load_model_path': args.load_model_path
     }
     
+
+    main = Main(train_config, env_config, debug=False, model_flag='full')
+    main.run()
+
+    main = Main(train_config, env_config, debug=False, model_flag='freeze')
+    main.run()
+
+    main = Main(train_config, env_config, debug=False, model_flag='onlytime')
+    main.run()
+
+    main = Main(train_config, env_config, debug=False, model_flag='nontime')
+    main.run()
+
+    main = Main(train_config, env_config, debug=False, model_flag='xgb')
+    main.run()
 
     main = Main(train_config, env_config, debug=False, model_flag='lgb')
     main.run()

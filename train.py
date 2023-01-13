@@ -20,23 +20,21 @@ def loss_func(y_pred, y_true):
     return loss
 
 
-def CE_loss(input, target):
+def CE_loss(input, target, Dice_gamma):
     return F.cross_entropy(input, target)
 
 
-def Dice_loss(input, target):
+def Dice_loss(input, target, Dice_gamma):
 
     Dice_score = 0
-    Dice_gamma = 1
 
     _, class_num = torch.unique(target, return_counts=True)
-    class_num[0] = 4305
-    class_num[1] = 9334
-    class_num[2] = 3961
+    class_num[0] = 1006
+    class_num[1] = 4614
+    class_num[2] = 1180
 
     for i in range(input.shape[0]):
         Dice_score = Dice_score + 1 / class_num[target[i]].to(torch.float64) * (2 * input[i, target[i]] + Dice_gamma)/(input[i, target[i]] + 1 + Dice_gamma)
-
 
     return 1 - 1/input.shape[1] * Dice_score
 
@@ -83,15 +81,11 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
             x_ave = torch.mean(input=x, dim=2) #
             for i in range(x.shape[2]): #
                 x[:,:,i] = x[:,:,i] / x_ave  #
-
             optimizer.zero_grad()
-#            out = model(x, edge_index).float().to(device)
             out, _= model(x, edge_index)
             out = out.float().to(device)
-
             out = out * x_ave #
 ###############################################################################################
-
 
             loss = loss_func(out, labels)
             loss.backward()
@@ -130,6 +124,14 @@ def pre_training(model = None, save_path = '', config={},  train_dataloader=None
 def fine_tuning(model=None, save_path='', config={},  train_dataloader=None, val_dataloader=None, feature_map={}, test_dataloader=None, test_dataset=None, train_dataset=None, dataset_name='swat'):
 
     seed = config['seed']
+    Dice_gamma = config['Dice_gamma']
+    loss_function = config['loss_function']
+
+    if loss_function=='CE_loss':
+        loss_func = CE_loss
+    elif loss_function=='Dice_loss':
+        loss_func = Dice_loss
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=config['decay'])
     now = time.time()
     
@@ -177,7 +179,7 @@ def fine_tuning(model=None, save_path='', config={},  train_dataloader=None, val
             true = true.to(torch.int64)
             true = true.view(-1)            
 
-            loss = CE_loss(out, true)
+            loss = loss_func(out, true, Dice_gamma)
             
             loss.backward()
             optimizer.step()

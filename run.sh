@@ -4,7 +4,7 @@ DATASET=$2
 seed=5
 BATCH_SIZE=32
 SLIDE_WIN=5
-dim=16
+dim=48
 out_layer_num=1
 SLIDE_STRIDE=1
 topk=5
@@ -14,9 +14,11 @@ decay=0
 
 path_pattern="${DATASET}"
 COMMENT="${DATASET}"
+loss_function="Dice_loss"
+Dice_gamma=0.2
 
 pre_EPOCH=2
-fin_EPOCH=3
+fin_EPOCH=2
 
 report='best'
 
@@ -39,6 +41,8 @@ if [[ "$gpu_n" == "cpu" ]]; then
         -val_ratio $val_ratio \
         -report $report \
         -topk $topk \
+        -loss_function $loss_function \
+        -Dice_gamma $Dice_gamma \
         -device 'cpu'
 else
     CUDA_VISIBLE_DEVICES=$gpu_n  python main.py \
@@ -59,5 +63,7 @@ else
         -val_ratio $val_ratio \
         -report $report \
         -topk $topk
+        -loss_function $loss_function \
+        -Dice_gamma $Dice_gamma \
 
 fi
