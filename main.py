@@ -56,6 +56,7 @@ class Main():
             for j in range(train_.shape[1]):
                 train_.iloc[i,j] = train.iloc[i*ave_span:(i+1)*ave_span, j].mean()
         train = train_
+        print('***train', train.shape)
 ###########################################################################
 
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
@@ -399,19 +400,19 @@ if __name__ == "__main__":
     main = Main(train_config, env_config, debug=False, model_flag='full')
     main.run()
 
-    main = Main(train_config, env_config, debug=False, model_flag='freeze')
-    main.run()
+#    main = Main(train_config, env_config, debug=False, model_flag='freeze')
+#    main.run()
 
-    main = Main(train_config, env_config, debug=False, model_flag='onlytime')
-    main.run()
+#    main = Main(train_config, env_config, debug=False, model_flag='onlytime')
+#    main.run()
 
-    main = Main(train_config, env_config, debug=False, model_flag='nontime')
-    main.run()
+#    main = Main(train_config, env_config, debug=False, model_flag='nontime')
+#    main.run()
 
-    main = Main(train_config, env_config, debug=False, model_flag='xgb')
-    main.run()
+#    main = Main(train_config, env_config, debug=False, model_flag='xgb')
+#    main.run()
 
-    main = Main(train_config, env_config, debug=False, model_flag='lgb')
-    main.run()
+#    main = Main(train_config, env_config, debug=False, model_flag='lgb')
+#    main.run()
 
-    # model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']
+#     model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']
