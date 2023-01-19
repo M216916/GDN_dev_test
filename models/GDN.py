@@ -28,7 +28,7 @@ def get_batch_edge_index(org_edge_index, batch_num, node_num):
 
 class Net(pl.LightningModule):
 
-    def __init__(self, input_size=72, hidden_size=10, output_size=3):
+    def __init__(self, input_size=72, hidden_size=83, output_size=3):
         super(Net, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)

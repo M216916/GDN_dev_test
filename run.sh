@@ -3,8 +3,8 @@ DATASET=$2
 
 seed=5
 BATCH_SIZE=32
-SLIDE_WIN=5
-dim=48
+SLIDE_WIN=19
+dim=70
 out_layer_num=1
 SLIDE_STRIDE=1
 topk=5
@@ -14,11 +14,11 @@ decay=0
 
 path_pattern="${DATASET}"
 COMMENT="${DATASET}"
-loss_function="Dice_loss"
+loss_function="CE_loss"    # CE_loss / Dice_loss
 Dice_gamma=0.2
 
-pre_EPOCH=2
-fin_EPOCH=2
+pre_EPOCH=200
+fin_EPOCH=150
 
 report='best'
 
