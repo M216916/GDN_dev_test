@@ -56,17 +56,12 @@ class Main():
             for j in range(train_.shape[1]):
                 train_.iloc[i,j] = train.iloc[i*ave_span:(i+1)*ave_span, j].mean()
         train = train_
-        print('***train', train.shape)
 ###########################################################################
 
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
         x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
 #        important = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 25, 29, 31, 34]
 #        x_non = x_non.iloc[important,:]
-        
-        pre_train = train.iloc[    :2400 + train_config['slide_win'],:]
-        fin_train = train.iloc[2000:2400 + train_config['slide_win'],:]
-        fin_test  = train.iloc[                              2400-1:,:]
 
         pre_train = train.iloc[    : 450 + train_config['slide_win'],:]
         fin_train = train.iloc[ 300: 450 + train_config['slide_win'],:]
@@ -133,12 +128,13 @@ class Main():
         fin_train_dataset = TimeDataset(fin_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
         fin_test_dataset  = TimeDataset(fin_test_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
 
-        fin_train_dataloader, fin_val_dataloader = self.get_loaders(
-            fin_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
+#        fin_train_dataloader, fin_val_dataloader = self.get_loaders(
+#            fin_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
+        fin_train_dataloader = DataLoader(fin_train_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
         fin_test_dataloader = DataLoader(fin_test_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
 
         self.fin_train_dataloader = fin_train_dataloader
-        self.fin_val_dataloader = fin_val_dataloader
+#        self.fin_val_dataloader = fin_val_dataloader
         self.fin_test_dataloader = fin_test_dataloader
 
 
@@ -236,7 +232,7 @@ class Main():
             fine_tuning(self.fin_model, fin_model_save_path, 
                     config = train_config,
                     train_dataloader=self.fin_train_dataloader,
-                    val_dataloader=self.fin_val_dataloader,
+                    val_dataloader=None,                                                # val_dataloader=None に変更
                     feature_map=self.feature_map,
                     test_dataloader=None,
                     test_dataset=None,
@@ -360,6 +356,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    '''
     random.seed(args.random_seed)
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
@@ -368,7 +365,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     os.environ['PYTHONHASHSEED'] = str(args.random_seed)
-
+    '''
 
     train_config = {
         'batch': args.batch,
@@ -397,8 +394,10 @@ if __name__ == "__main__":
     }
     
 
-    main = Main(train_config, env_config, debug=False, model_flag='full')
-    main.run()
+    for i in range(3):
+        print('[[[[[[[[[[[[[[[[[', i, ']]]]]]]]]]]]]]]]]]]]')
+        main = Main(train_config, env_config, debug=False, model_flag='onlytime')
+        main.run()
 
 #    main = Main(train_config, env_config, debug=False, model_flag='freeze')
 #    main.run()
@@ -409,10 +408,5 @@ if __name__ == "__main__":
 #    main = Main(train_config, env_config, debug=False, model_flag='nontime')
 #    main.run()
 
-#    main = Main(train_config, env_config, debug=False, model_flag='xgb')
-#    main.run()
-
-#    main = Main(train_config, env_config, debug=False, model_flag='lgb')
-#    main.run()
 
 #     model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']
