@@ -3,7 +3,6 @@ from torch.nn import Parameter, Linear, Sequential, BatchNorm1d, ReLU
 import torch.nn.functional as F
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import remove_self_loops, add_self_loops, softmax
-
 from torch_geometric.nn.inits import glorot, zeros
 import time
 import math

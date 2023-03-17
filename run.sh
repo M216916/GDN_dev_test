@@ -3,8 +3,8 @@ DATASET=$2
 
 seed=5
 BATCH_SIZE=32
-SLIDE_WIN=5
-dim=64
+SLIDE_WIN=19
+dim=70
 out_layer_num=1
 SLIDE_STRIDE=1
 topk=5
@@ -12,11 +12,14 @@ out_layer_inter_dim=128
 val_ratio=0.2
 decay=0
 
-
 path_pattern="${DATASET}"
 COMMENT="${DATASET}"
+loss_function="CE_loss"    # CE_loss / Dice_loss
+Dice_gamma=3
 
-EPOCH=2
+pre_EPOCH=200
+fin_EPOCH=200
+
 report='best'
 
 if [[ "$gpu_n" == "cpu" ]]; then
@@ -26,7 +29,8 @@ if [[ "$gpu_n" == "cpu" ]]; then
         -slide_stride $SLIDE_STRIDE \
         -slide_win $SLIDE_WIN \
         -batch $BATCH_SIZE \
-        -epoch $EPOCH \
+        -pre_epoch $pre_EPOCH \
+        -fin_epoch $fin_EPOCH \
         -comment $COMMENT \
         -random_seed $seed \
         -decay $decay \
@@ -37,6 +41,8 @@ if [[ "$gpu_n" == "cpu" ]]; then
         -val_ratio $val_ratio \
         -report $report \
         -topk $topk \
+        -loss_function $loss_function \
+        -Dice_gamma $Dice_gamma \
         -device 'cpu'
 else
     CUDA_VISIBLE_DEVICES=$gpu_n  python main.py \
@@ -45,7 +51,8 @@ else
         -slide_stride $SLIDE_STRIDE \
         -slide_win $SLIDE_WIN \
         -batch $BATCH_SIZE \
-        -epoch $EPOCH \
+        -pre_epoch $pre_EPOCH \
+        -fin_epoch $fin_EPOCH \
         -comment $COMMENT \
         -random_seed $seed \
         -decay $decay \
@@ -56,4 +63,7 @@ else
         -val_ratio $val_ratio \
         -report $report \
         -topk $topk
+        -loss_function $loss_function \
+        -Dice_gamma $Dice_gamma \
+
 fi
