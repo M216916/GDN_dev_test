@@ -17,8 +17,8 @@ COMMENT="${DATASET}"
 loss_function="CE_loss"    # CE_loss / Dice_loss
 Dice_gamma=3
 
-pre_EPOCH=200
-fin_EPOCH=200
+pre_EPOCH=2
+fin_EPOCH=2
 
 report='best'
 

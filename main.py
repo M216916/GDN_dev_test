@@ -356,7 +356,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    '''
     random.seed(args.random_seed)
     np.random.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
@@ -365,7 +364,6 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     os.environ['PYTHONHASHSEED'] = str(args.random_seed)
-    '''
 
     train_config = {
         'batch': args.batch,
@@ -394,19 +392,7 @@ if __name__ == "__main__":
     }
     
 
-    for i in range(3):
-        print('[[[[[[[[[[[[[[[[[', i, ']]]]]]]]]]]]]]]]]]]]')
-        main = Main(train_config, env_config, debug=False, model_flag='onlytime')
-        main.run()
+    main = Main(train_config, env_config, debug=False, model_flag='full')
+    main.run()
 
-#    main = Main(train_config, env_config, debug=False, model_flag='freeze')
-#    main.run()
-
-#    main = Main(train_config, env_config, debug=False, model_flag='onlytime')
-#    main.run()
-
-#    main = Main(train_config, env_config, debug=False, model_flag='nontime')
-#    main.run()
-
-
-#     model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']
+#     model_flag = ['full', 'freeze', 'onlytime', 'nontime']
