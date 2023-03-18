@@ -41,6 +41,14 @@
 
   実行モデルの選択
   ⇒model_flag = ['full', 'freeze', 'onlytime', 'nontime']から選択
+        
+        full ・・・　提案モデル（Pre-training ＋ Fine-tuning）
+
+        freeze　・・・　凍結モデル（Pre-trainingの学習パラメータの凍結）
+
+        onlytime　・・・　時系列属性のみを投入したモデル
+
+        nontime　・・・非時系列属性のみを投入したモデル
 
 * run.sh
 
@@ -49,3 +57,45 @@
   エポック数の調整（pre_EPOCH and fin_EPOCH）
 
   その他ハイパーパラメータの調整（GDN_dev_optuna で）
+
+
+# 実行方法
+
+* 仮想環境を作成（mainの環境を汚さないように）
+
+* GitHub から gitclone
+
+        （例）git clone https://github.com/M216916/GDN_dev_test1.git
+
+* GDN_dev_test1 のディレクトリに入る
+
+* cpu で実行
+
+        （例）@prmir11:~/GDN_dev_test1$ bash run.sh cpu yfinance_01_100
+
+        （GPUでも実行できるらしいが、環境設定が分からず断念）
+
+* 実行内容
+
+        所定のエポック数（Pre-trainingおよびFine-tuning）の学習が繰り返される
+
+        最終的な精度が表示される
+
+
+# 評価（精度）
+
+* Pre-training部分
+
+        GDN_imgフォルダが作成され、回帰予測グラフが生成される
+
+* Fine-tuning部分
+
+        ターミナル上に以下が表示される
+
+                混同行列
+                
+                Accuracy
+                
+                クラスごとのPrecision・Recall・F1
+                
+                上記Precision・Recall・F1の平均
