@@ -1,5 +1,6 @@
 # モデル
-### GDN_dev_test （test用）
+### GDN_dev_test1 （test用）
+* 提案モデル（full, freeze, onlytime, nontime）のみ実行
 
 
 # 概要
@@ -29,7 +30,22 @@
 
         すべて（2730社分）のデータ（本当はこれで実験したかったが時間がかかるため断念）
 
-               
-# データ
-* 最終テスト
-* randam_seed設定
+
+# 調整事項
+
+* main.py
+
+  データの分割を指定
+
+  時系列属性の平均化（圧縮）の調整
+
+  実行モデルの選択
+  ⇒model_flag = ['full', 'freeze', 'onlytime', 'nontime']から選択
+
+* run.sh
+
+  loss_functionの選択（CE_loss or Dice_loss）
+
+  エポック数の調整（pre_EPOCH and fin_EPOCH）
+
+  その他ハイパーパラメータの調整（GDN_dev_optuna で）
