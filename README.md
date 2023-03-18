@@ -71,7 +71,7 @@
 
         （例）git clone https://github.com/M216916/GDN_dev_test.git
 
-* GDN_dev_test1 のディレクトリに入る
+* GDN_dev_test のディレクトリに入る
 
 * cpu で実行
 
