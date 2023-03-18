@@ -1,6 +1,6 @@
 # モデル
-### GDN_dev_test1 （test用）
-* 提案モデル（full, freeze, onlytime, nontime）のみ実行
+### GDN_dev_test （test用）
+* 提案モデル（full, freeze, onlytime, nontime, xgb, lgb）を実行
 
 
 # 概要
@@ -40,7 +40,7 @@
   時系列属性の平均化（圧縮）の調整
 
   実行モデルの選択
-  ⇒model_flag = ['full', 'freeze', 'onlytime', 'nontime']から選択
+  ⇒model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']から選択
         
         full ・・・　提案モデル（Pre-training ＋ Fine-tuning）
 
@@ -49,6 +49,10 @@
         onlytime　・・・　時系列属性のみを投入したモデル
 
         nontime　・・・非時系列属性のみを投入したモデル
+
+        xgb　・・・　Pre-training後にXgboostを適用したモデル
+
+        lgb　・・・　Pre-training後にLightGBMを適用したモデル
 
 * run.sh
 
@@ -65,13 +69,15 @@
 
 * GitHub から gitclone
 
-        （例）git clone https://github.com/M216916/GDN_dev_test1.git
+        （例）git clone https://github.com/M216916/GDN_dev_test.git
 
 * GDN_dev_test1 のディレクトリに入る
 
 * cpu で実行
 
-        （例）@prmir11:~/GDN_dev_test1$ bash run.sh cpu yfinance_01_100
+        （例）@prmir11:~/GDN_dev_test$ bash run.sh cpu yfinance_01_100
+
+        （実行するデータを選択）
 
         （GPUでも実行できるらしいが、環境設定が分からず断念）
 

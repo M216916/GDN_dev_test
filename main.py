@@ -60,34 +60,10 @@ class Main():
 
         x_non = pd.read_csv(f'./data/{dataset}/x_non.csv', sep=',', index_col=0)
         x_non = x_non.apply(lambda x: (x-x.mean())/x.std(), axis=0)               #属性(columns)ごとに標準化
-#        important = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 25, 29, 31, 34]
-#        x_non = x_non.iloc[important,:]
 
         pre_train = train.iloc[    : 450 + train_config['slide_win'],:]
         fin_train = train.iloc[ 300: 450 + train_config['slide_win'],:]
         fin_test  = train.iloc[                               450-1:,:]
-
-
-##################################################################################################
-        '''
-        # fin_test の各クラスの数を数える
-        classes = torch.zeros(fin_test.shape[0]-train_config['slide_win'], fin_test.shape[1])
-        line = 0.009
-        for i in range(classes.shape[0]):
-            for j in range(classes.shape[1]):
-                a = fin_test.iloc[i+train_config['slide_win']-1, j]
-                b = fin_test.iloc[i+train_config['slide_win'],   j]
-                rate = (b-a)/a
-                if rate >= -line:
-                    classes[i,j] = 1
-                    if rate > line:
-                        classes[i,j] = 2
-        _, class_num = torch.unique(classes, return_counts=True)
-        print(class_num[0])
-        print(class_num[1])
-        print(class_num[2])
-        '''
-##################################################################################################
 
 
         feature_map = get_feature_map(dataset)
@@ -128,13 +104,13 @@ class Main():
         fin_train_dataset = TimeDataset(fin_train_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
         fin_test_dataset  = TimeDataset(fin_test_dataset_indata, fc_edge_index, mode='train', config=cfg, x_non=x_non, flag='fin')
 
-#        fin_train_dataloader, fin_val_dataloader = self.get_loaders(
-#            fin_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
+        _, fin_val_dataloader = self.get_loaders(
+            fin_train_dataset, train_config['seed'], train_config['batch'], val_ratio = train_config['val_ratio'])
         fin_train_dataloader = DataLoader(fin_train_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
         fin_test_dataloader = DataLoader(fin_test_dataset, batch_size=train_config['batch'], shuffle=False, num_workers=0)
 
         self.fin_train_dataloader = fin_train_dataloader
-#        self.fin_val_dataloader = fin_val_dataloader
+        self.fin_val_dataloader = fin_val_dataloader
         self.fin_test_dataloader = fin_test_dataloader
 
 
@@ -395,4 +371,4 @@ if __name__ == "__main__":
     main = Main(train_config, env_config, debug=False, model_flag='full')
     main.run()
 
-#     model_flag = ['full', 'freeze', 'onlytime', 'nontime']
+#     model_flag = ['full', 'freeze', 'onlytime', 'nontime', 'xgb', 'lgb']
